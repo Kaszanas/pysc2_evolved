@@ -21,9 +21,9 @@
 
 # PySC2_Evolved - StarCraft II Learning Environment
 
-Originally created as [PySC2](https://github.com/deepmind/pysc2_evolved)
+Originally created as [PySC2](https://github.com/deepmind/pysc2)
 by [DeepMind](http://deepmind.com) as a Python component of the StarCraft II
-Learning Environment (SC2LE). This is a community for of the original PySC2 project,
+Learning Environment (SC2LE). This is a community fork of the original PySC2 project,
 which seems to be no longer maintained. The goal of this project is to modernize PySC2 as
 PySC2_Evolved and to add new features and improvements to the original project.
 
@@ -113,7 +113,7 @@ for better compatibility with other systems.
 
 ## Get the maps
 
-PySC2 has many maps pre-configured, but they need to be downloaded into the SC2
+PySC2_Evolved has many maps pre-configured, but they need to be downloaded into the SC2
 `Maps` directory before they can be played.
 
 Download the [ladder maps](https://github.com/Blizzard/s2client-proto#downloads)
