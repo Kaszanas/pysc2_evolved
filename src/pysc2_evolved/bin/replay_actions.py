@@ -14,6 +14,8 @@
 # limitations under the License.
 """Dump out stats about all the actions that are in use in a set of replays."""
 
+from __future__ import annotations
+
 import collections
 import enum
 import logging
@@ -25,6 +27,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 import typer
 from s2clientprotocol import common_pb2 as sc_common
@@ -41,9 +44,9 @@ from pysc2_evolved.lib import (
     replay,
     static_data,
 )
-from pysc2_evolved.settings import LOGGING_FORMAT
-
+from pysc2_evolved.lib.remote_controller import RemoteController
 from pysc2_evolved.run_configs.lib import RunConfig
+from pysc2_evolved.settings import LOGGING_FORMAT
 
 
 def sorted_dict_str(d):
@@ -75,10 +78,10 @@ class ReplayStats(object):
         self.crashing_replays = set()
         self.invalid_replays = set()
 
-    def merge(self, other):
+    def merge(self, other: ReplayStats):
         """Merge another ReplayStats into this one."""
 
-        def merge_dict(a, b):
+        def merge_dict(a: Dict, b: Dict):
             for k, v in b.items():
                 a[k] += v
 
@@ -105,7 +108,7 @@ class ReplayStats(object):
         def len_sorted_dict(s):
             return (len(s), sorted_dict_str(s))
 
-        def len_sorted_list(s):
+        def len_sorted_list(s) -> Tuple[int, List]:
             return (len(s), sorted(s))
 
         new_abilities = (
@@ -147,7 +150,8 @@ class ReplayStats(object):
 class ProcessStats(object):
     """Stats for a worker process."""
 
-    def __init__(self, step_mul: int, proc_id):
+    # REVIEW: Check if the proc_id is an int:
+    def __init__(self, step_mul: int, proc_id: int):
         self.step_mul = step_mul
         self.proc_id = proc_id
         self.time = time.time()
@@ -175,7 +179,7 @@ class ProcessStats(object):
         )
 
 
-def valid_replay(info, ping):
+def valid_replay(info, ping) -> bool:
     """Make sure the replay isn't corrupt, and is worth looking at."""
     if (
         info.HasField("error")
@@ -216,7 +220,10 @@ class ReplayProcessor(multiprocessing.Process):
         self.stats = ProcessStats(self.proc_id)
 
     def run(self):
-        signal.signal(signal.SIGTERM, lambda a, b: sys.exit())  # Exit quietly.
+        def exit_quietly(a, b):
+            sys.exit()
+
+        signal.signal(signal.SIGTERM, exit_quietly)  # Exit quietly.
         self._update_stage("spawn")
         replay_name = "none"
         while True:
@@ -292,7 +299,15 @@ class ReplayProcessor(multiprocessing.Process):
         self.stats.update(stage)
         self.stats_queue.put(self.stats)
 
-    def process_replay(self, controller, step_mul, replay_data, map_data, player_id):
+    # REVIEW: Make sure that the player ID is an integer:
+    def process_replay(
+        self,
+        controller: RemoteController,
+        step_mul: int,
+        replay_data,
+        map_data,
+        player_id: int,
+    ):
         """Process a single replay, updating the stats."""
         self._update_stage("start_replay")
         controller.start_replay(
@@ -309,6 +324,11 @@ class ReplayProcessor(multiprocessing.Process):
         self.stats.replay_stats.replays += 1
         self._update_stage("step")
         controller.step()
+
+        # TODO: Make this a little bit more general,
+        # pass a callable that takes in the observation and does with it whatever:
+        # Another case would be to just create different implementations of the ReplayProcessor
+        # and treat it as a base class:
         while True:
             self.stats.replay_stats.steps += 1
             self._update_stage("observe")
@@ -359,7 +379,7 @@ class ReplayProcessor(multiprocessing.Process):
             controller.step(step_mul)
 
 
-def stats_printer(parallel: int, stats_queue):
+def stats_printer(parallel: int, stats_queue: multiprocessing.Queue):
     """A thread that consumes stats_queue and prints them every 10 seconds."""
     proc_stats = [ProcessStats(i) for i in range(parallel)]
     print_time = start_time = time.time()
@@ -390,7 +410,10 @@ def stats_printer(parallel: int, stats_queue):
         print("=" * width)
 
 
-def replay_queue_filler(replay_queue, replay_list):
+def replay_queue_filler(
+    replay_queue: multiprocessing.JoinableQueue,
+    replay_list: List[str],
+):
     """A thread that fills the replay_queue with replay filenames."""
     for replay_path in replay_list:
         replay_queue.put(replay_path)
