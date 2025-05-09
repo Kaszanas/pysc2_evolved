@@ -43,6 +43,8 @@ from pysc2_evolved.lib import (
 )
 from pysc2_evolved.settings import LOGGING_FORMAT
 
+from pysc2_evolved.run_configs.lib import RunConfig
+
 
 def sorted_dict_str(d):
     return "{%s}" % ", ".join(
@@ -194,7 +196,14 @@ def valid_replay(info, ping):
 class ReplayProcessor(multiprocessing.Process):
     """A Process that pulls replays and processes them."""
 
-    def __init__(self, interface, proc_id: int, run_config, replay_queue, stats_queue):
+    def __init__(
+        self,
+        interface,
+        proc_id: int,
+        run_config: RunConfig,
+        replay_queue: multiprocessing.JoinableQueue,
+        stats_queue: multiprocessing.Queue,
+    ):
         super(ReplayProcessor, self).__init__()
 
         self.interface = interface
