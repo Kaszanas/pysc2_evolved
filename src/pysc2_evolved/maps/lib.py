@@ -29,8 +29,11 @@ if you've imported the map module somewhere.
 """
 
 import os
+from typing import Dict
 
 from absl import logging
+
+from pysc2_evolved.run_configs.lib import RunConfig
 
 
 class DuplicateMapError(Exception):
@@ -60,15 +63,15 @@ class Map(object):
       battle_net: The map name on battle.net, if it exists.
     """
 
-    directory = ""
-    filename = None
-    download = None
-    game_steps_per_episode = 0
-    step_mul = 8
-    score_index = -1
+    directory: str = ""
+    filename: str | None = None
+    download: str = None
+    game_steps_per_episode: int = 0
+    step_mul: int = 8
+    score_index: int = -1
     score_multiplier = 1
-    players = None
-    battle_net = None
+    players: int | None = None
+    battle_net: str | None = None
 
     @property
     def path(self):
@@ -79,7 +82,7 @@ class Map(object):
                 map_path += ".SC2Map"
             return map_path
 
-    def data(self, run_config):
+    def data(self, run_config: RunConfig):
         """Return the map data."""
         try:
             return run_config.map_data(self.path, self.players)
@@ -90,10 +93,10 @@ class Map(object):
             raise
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(
             filter(
                 None,
@@ -120,7 +123,7 @@ class Map(object):
                 yield c
 
 
-def get_maps():
+def get_maps() -> Dict[str, Map]:
     """Get the full dict of maps {map_name: map_class}."""
     maps = {}
     for mp in Map.all_subclasses():
@@ -132,7 +135,7 @@ def get_maps():
     return maps
 
 
-def get(map_name):
+def get(map_name: str | Map) -> Map:
     """Get an instance of a map by name. Errors if the map doesn't exist."""
     if isinstance(map_name, Map):
         return map_name
