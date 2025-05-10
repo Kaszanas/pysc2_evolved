@@ -159,7 +159,7 @@ class ProcessStats(object):
         self.replay = ""
         self.replay_stats = ReplayStats()
 
-    def update(self, stage):
+    def update(self, stage: str):
         self.time = time.time()
         self.stage = stage
 
@@ -215,8 +215,17 @@ class ReplayProcessor(multiprocessing.Process):
 
         self.run_config = run_config
         self.replay_queue = replay_queue
+
+        # TODO: Most likely needs to be renamed to ObservationRecorderQueue
+        # this will make sure that there is some nice customizability:
         self.stats_queue = stats_queue
 
+        # TODO: Another self variable is needed e.g. self.observation_recorders: List[ObservationRecorder]
+        # Then there is no need to be adding anything to self.stats.
+        # This is because all of the statistics will be kept in the recorders that will have a method:
+        # e.g. def record_from_observation(observation)
+
+        # REVIEW: This will not be needed:
         self.stats = ProcessStats(self.proc_id)
 
     def run(self):
@@ -295,7 +304,7 @@ class ReplayProcessor(multiprocessing.Process):
         for line in str(s).strip().splitlines():
             print("[%s] %s" % (self.stats.proc_id, line))
 
-    def _update_stage(self, stage):
+    def _update_stage(self, stage: str):
         self.stats.update(stage)
         self.stats_queue.put(self.stats)
 
@@ -379,6 +388,14 @@ class ReplayProcessor(multiprocessing.Process):
             controller.step(step_mul)
 
 
+# REVIEW: Thus handles the things entering from the stats_queue
+# Needs to be refactored to handle persistence of all of the planned
+# ObservationRecorder types.
+# Most likely some sort of an interface like PersistenceTypeInterface
+# with PersistenceTypeStrategy or Factory
+# with implementations such as DBPersistence, DiskPersistence.
+# The goal is to save the data of all of the replays per directory on which the
+# ReplayProcessor was ran.
 def stats_printer(parallel: int, stats_queue: multiprocessing.Queue):
     """A thread that consumes stats_queue and prints them every 10 seconds."""
     proc_stats = [ProcessStats(i) for i in range(parallel)]

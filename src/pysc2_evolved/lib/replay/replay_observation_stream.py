@@ -16,6 +16,7 @@
 import io
 import json
 import time
+from typing import List
 
 from absl import logging
 import mpyq
@@ -23,12 +24,18 @@ from pysc2_evolved import run_configs
 
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved.run_configs.lib import RunConfig
 
-def _get_replay_version(replay_data):
+from pysc2_evolved.lib.remote_controller import RemoteController
+
+
+# REVIEW: Make sure that the replay_data is bytes type:
+def _get_replay_version(replay_data: bytes):
     replay_io = io.BytesIO()
     replay_io.write(replay_data)
     replay_io.seek(0)
-    archive = mpyq.MPQArchive(replay_io).extract()
+    mpq_object = mpyq.MPQArchive(replay_io)
+    archive = mpq_object.extract()
     metadata = json.loads(bytes.decode(archive[b"replay.gamemetadata.json"], "utf-8"))
     return run_configs.lib.Version(
         game_version=".".join(metadata["GameVersion"].split(".")[:-1]),
@@ -43,7 +50,8 @@ class ReplayError(Exception):
 
 
 class ReplayObservationStream(object):
-    """Wrapper class for iterating over replay observation data.
+    """
+    Wrapper class for iterating over replay observation data.
 
     Yields the observations for a replay from player_id's perspective. The class
     can throw connection errors from the controller. These should be caught
@@ -73,7 +81,8 @@ class ReplayObservationStream(object):
         game_steps_per_episode: int = 0,
         add_opponent_observations: bool = False,
     ):
-        """Constructs the replay stream object.
+        """
+        Constructs the replay stream object.
 
         Args:
           interface_options: Interface format to use.
@@ -100,9 +109,9 @@ class ReplayObservationStream(object):
         self._interface = interface_options
         self._want_rgb = self._interface.HasField("render")
 
-        self._run_config = None
+        self._run_config: RunConfig | None = None
         self._sc2_procs = []
-        self._controllers = []
+        self._controllers: List[RemoteController] = []
 
     def _get_controllers(self, version):
         """Get controllers."""
@@ -129,7 +138,7 @@ class ReplayObservationStream(object):
                 proc.close()
         self._sc2_procs = []
 
-    def start_replay_from_data(self, replay_data, player_id):
+    def start_replay_from_data(self, replay_data, player_id: int):
         """Starts the stream of replay observations from an in-memory replay."""
         self._player_id = player_id
 
@@ -181,7 +190,8 @@ class ReplayObservationStream(object):
         return self._controllers[0].data()
 
     def observations(self, step_sequence=None):
-        """Yields a ResponseObservation proto for each environment step.
+        """
+        Yields a ResponseObservation proto for each environment step.
 
         If using the opponent's observations, this will yield a list of
         observations, one for each player.
