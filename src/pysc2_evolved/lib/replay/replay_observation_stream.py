@@ -15,18 +15,16 @@
 
 import io
 import json
+import logging
 import time
 from typing import List
 
-from absl import logging
 import mpyq
-from pysc2_evolved import run_configs
-
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
-from pysc2_evolved.run_configs.lib import RunConfig
-
+from pysc2_evolved import run_configs
 from pysc2_evolved.lib.remote_controller import RemoteController
+from pysc2_evolved.run_configs.lib import RunConfig, Version
 
 
 # REVIEW: Make sure that the replay_data is bytes type:
@@ -113,13 +111,16 @@ class ReplayObservationStream(object):
         self._sc2_procs = []
         self._controllers: List[RemoteController] = []
 
-    def _get_controllers(self, version):
-        """Get controllers."""
+    def _get_controllers(self, version: Version):
+        """
+        Get controllers.
+        """
         if not self._run_config or self._run_config.version != version:
             # Close current process and create a new one.
             self._close()
             self._run_config = run_configs.get(version=version)
             self._sc2_procs = [self._run_config.start(want_rgb=self._want_rgb)]
+            # Add the opponent's observations if toggled:
             if self._add_opponent_observations:
                 self._sc2_procs.append(self._run_config.start(want_rgb=self._want_rgb))
 
@@ -138,12 +139,12 @@ class ReplayObservationStream(object):
                 proc.close()
         self._sc2_procs = []
 
-    def start_replay_from_data(self, replay_data, player_id: int):
+    def start_replay_from_data(self, replay_data: bytes, player_id: int):
         """Starts the stream of replay observations from an in-memory replay."""
         self._player_id = player_id
 
         try:
-            version = _get_replay_version(replay_data)
+            version = _get_replay_version(replay_data=replay_data)
         except (ValueError, AttributeError) as err:
             logging.exception("Error getting replay version from data: %s", err)
             raise ReplayError(err)
@@ -165,7 +166,7 @@ class ReplayObservationStream(object):
 
         logging.info("Starting replay...")
 
-        self._controllers = self._get_controllers(version)
+        self._controllers = self._get_controllers(version=version)
         self._info = info = self._controllers[0].replay_info(replay_data)
         logging.info(" Replay info ".center(60, "-"))
         logging.info(info)
@@ -189,7 +190,7 @@ class ReplayObservationStream(object):
     def static_data(self):
         return self._controllers[0].data()
 
-    def observations(self, step_sequence=None):
+    def observations(self, step_sequence: List[int] | None = None):
         """
         Yields a ResponseObservation proto for each environment step.
 
