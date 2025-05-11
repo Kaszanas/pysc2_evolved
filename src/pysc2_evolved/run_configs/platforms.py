@@ -14,29 +14,26 @@
 """Configs for how to run SC2 from a normal install on various platforms."""
 
 import copy
+import logging
 import os
 import platform
 import subprocess
 import sys
 
-from absl import flags
-from absl import logging
-
 from pysc2_evolved.lib import sc_process
 from pysc2_evolved.run_configs import lib
 from pysc2_evolved.run_configs.lib import Version
 
-
-flags.DEFINE_enum(
-    "sc2_version",
-    None,
-    sorted(lib.VERSIONS.keys()),
-    "Which version of the game to use.",
-)
-flags.DEFINE_bool(
-    "sc2_dev_build", False, "Use a dev build. Mostly useful for testing by Blizzard."
-)
-FLAGS = flags.FLAGS
+# flags.DEFINE_enum(
+#     "sc2_version",
+#     None,
+#     sorted(lib.VERSIONS.keys()),
+#     "Which version of the game to use.",
+# )
+# flags.DEFINE_bool(
+#     "sc2_dev_build", False, "Use a dev build. Mostly useful for testing by Blizzard."
+# )
+# FLAGS = flags.FLAGS
 
 
 def _read_execute_info(path, parents: int):
@@ -67,9 +64,10 @@ class LocalBase(lib.RunConfig):
         version: Version | str,
         cwd=None,
         env=None,
+        sc2_dev_build: bool = False,
     ):
         base_dir = os.path.expanduser(base_dir)
-        version = version or FLAGS.sc2_version or "latest"
+        version = version or "latest"
         cwd = cwd and os.path.join(base_dir, cwd)
         super(LocalBase, self).__init__(
             replay_dir=os.path.join(base_dir, "Replays"),
@@ -79,7 +77,7 @@ class LocalBase(lib.RunConfig):
             cwd=cwd,
             env=env,
         )
-        if FLAGS.sc2_dev_build:
+        if sc2_dev_build:
             self.version = self.version._replace(build_version=0)
         elif self.version.build_version < lib.VERSIONS["3.16.1"].build_version:
             raise sc_process.SC2LaunchError(
@@ -106,9 +104,15 @@ class LocalBase(lib.RunConfig):
         if not os.path.exists(exec_path):
             raise sc_process.SC2LaunchError("No SC2 binary found at: %s" % exec_path)
 
-        return sc_process.StarcraftProcess(
-            self, exec_path=exec_path, version=self.version, **kwargs
+        # Spawns the SC2 Process
+        sc_process_return = sc_process.StarcraftProcess(
+            self,
+            exec_path=exec_path,
+            version=self.version,
+            **kwargs,
         )
+
+        return sc_process_return
 
     def get_versions(self, containing: str | None = None) -> dict[str, lib.Version]:
         versions_dir = os.path.join(self.data_dir, "Versions")
