@@ -17,20 +17,22 @@ This is mainly intended for use where the functions have a barrier and none will
 return until all have been called.
 """
 
-from concurrent import futures
 import functools
+from concurrent import futures
+from typing import Any, Callable, List
 
 
 class RunParallel(object):
     """Run all funcs in parallel."""
 
-    def __init__(self, timeout=None):
+    def __init__(self, timeout: float | None = None):
         self._timeout = timeout
-        self._executor = None
-        self._workers = 0
+        self._executor: futures.ThreadPoolExecutor | None = None
+        self._workers: int = 0
 
-    def run(self, funcs):
-        """Run a set of functions in parallel, returning their results.
+    def run(self, funcs: Callable) -> List[Any]:
+        """
+        Run a set of functions in parallel, returning their results.
 
         Make sure any function you pass exits with a reasonable timeout. If it
         doesn't return within the timeout or the result is ignored due an exception
@@ -76,7 +78,7 @@ class RunParallel(object):
         # Either done or timed out, so don't wait again.
         return [f.result(timeout=0) for f in futs]
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait: bool = True):
         if self._executor:
             self._executor.shutdown(wait)
             self._executor = None
