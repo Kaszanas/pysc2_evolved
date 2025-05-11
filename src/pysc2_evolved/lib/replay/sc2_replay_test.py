@@ -12,20 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from absl import flags
 from absl.testing import absltest
+
+from pysc2_evolved.lib import gfile, resources
 from pysc2_evolved.lib.replay import sc2_replay
-
-from pysc2_evolved.lib import gfile
-from pysc2_evolved.lib import resources
-
-FLAGS = flags.FLAGS
-PATH = "pysc2_evolved/lib/replay/test_data/replay_01.SC2Replay"
 
 
 class Sc2ReplayTest(absltest.TestCase):
     def setUp(self):
         super(Sc2ReplayTest, self).setUp()
+
+        PATH = "pysc2_evolved/lib/replay/test_data/replay_01.SC2Replay"
 
         replay_path = resources.GetResourceFilename(PATH)
         with gfile.Open(replay_path, mode="rb") as f:
