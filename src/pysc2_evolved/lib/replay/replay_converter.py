@@ -14,18 +14,20 @@
 """SC2 replay data -> converted observations."""
 
 import collections
-from typing import Any, Dict, Iterable, Sequence
+from typing import Any, Callable, Dict, Iterable, Sequence
 
 import numpy as np
+import tree
+from s2clientprotocol import sc2api_pb2
+
 from pysc2_evolved.env.converter import converter as converter_lib
 from pysc2_evolved.env.converter import derive_interface_options
 from pysc2_evolved.env.converter.proto import converter_pb2
-from pysc2_evolved.lib.replay import replay_observation_stream
-from pysc2_evolved.lib.replay import sc2_replay
-from pysc2_evolved.lib.replay import sc2_replay_utils
-import tree
-
-from s2clientprotocol import sc2api_pb2
+from pysc2_evolved.lib.replay import (
+    replay_observation_stream,
+    sc2_replay,
+    sc2_replay_utils,
+)
 
 
 def _unconverted_observation(observation, actions):
@@ -47,7 +49,10 @@ def get_flat_action(obs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _convert_observation(
-    converter, player_observation, force_action_delay, force_action_fn
+    converter: converter_lib.Converter,
+    player_observation,
+    force_action_delay,
+    force_action_fn,
 ):
     """Convert a raw observation proto and set action delay."""
     player_observation.force_action_delay = force_action_delay
@@ -62,8 +67,12 @@ def _convert_observation(
     return tree.map_structure(_squeeze_if_necessary, converted_observation)
 
 
+# REVIEW: Better typing for accept_step_fn:
 def converted_observations(
-    observations_iterator, converter, accept_step_fn, force_action_fn=get_flat_action
+    observations_iterator,
+    converter: converter_lib.Converter,
+    accept_step_fn: Callable[[Any], bool],
+    force_action_fn: Callable[[Dict[str, Any]], Dict[str, Any]] = get_flat_action,
 ):
     """Generator of transformed observations (incl. action and time delay)."""
     current_observation = next(observations_iterator)
@@ -87,7 +96,8 @@ def converted_observations(
 
         player_obs_queue.append(
             _unconverted_observation(
-                observation=current_observation, actions=next_observation[0].actions
+                observation=current_observation,
+                actions=next_observation[0].actions,
             )
         )
 
@@ -114,7 +124,8 @@ def converted_observations(
     # Always use last observation, it contains the player result.
     player_obs_queue.append(
         _unconverted_observation(
-            observation=current_observation, actions=current_observation[0].actions
+            observation=current_observation,
+            actions=current_observation[0].actions,
         )
     )
 
@@ -134,8 +145,8 @@ def converted_observations(
             # the last step are never taken.
             force_action_delay = previous_delay
         converted_observation = _convert_observation(
-            converter,
-            player_obs,
+            converter=converter,
+            player_observation=player_obs,
             force_action_delay=force_action_delay,
             force_action_fn=force_action_fn,
         )
@@ -151,7 +162,9 @@ def converted_observation_stream(
     disable_fog: bool = False,
     max_steps: int = int(1e6),
 ):
-    """Generator of transformed observations (incl. action and time delay)."""
+    """
+    Generator of transformed observations (incl. action and time delay).
+    """
 
     with replay_observation_stream.ReplayObservationStream(
         step_mul=1,
@@ -160,7 +173,10 @@ def converted_observation_stream(
         interface_options=derive_interface_options.from_settings(converter_settings),
         disable_fog=disable_fog,
     ) as replay_stream:
-        replay_stream.start_replay_from_data(replay_data, player_id=player_id)
+        replay_stream.start_replay_from_data(
+            replay_data=replay_data,
+            player_id=player_id,
+        )
 
         obs_converter = converter_lib.Converter(
             converter_settings,
@@ -170,10 +186,10 @@ def converted_observation_stream(
             ),
         )
 
-        replay_file = sc2_replay.SC2Replay(replay_data)
-        action_skips = sc2_replay_utils.raw_action_skips(replay_file)
+        replay_file = sc2_replay.SC2Replay(replay_data=replay_data)
+        action_skips = sc2_replay_utils.raw_action_skips(replay=replay_file)
         player_action_skips = action_skips[player_id]
-        step_sequence = get_step_sequence(player_action_skips)
+        step_sequence = get_step_sequence(action_skips=player_action_skips)
 
         observations_iterator = replay_stream.observations(step_sequence=step_sequence)
 
@@ -181,7 +197,9 @@ def converted_observation_stream(
             return step in player_action_skips
 
         yield from converted_observations(
-            observations_iterator, obs_converter, _accept_step_fn
+            observations_iterator=observations_iterator,
+            converter=obs_converter,
+            accept_step_fn=_accept_step_fn,
         )
 
 
@@ -190,7 +208,8 @@ def converted_observation_stream(
 # whether we want to change the observation at which the camera action is being
 # reported.
 def get_step_sequence(action_skips: Iterable[int]) -> Sequence[int]:
-    """Generates a sequence of step muls for the replay stream.
+    """
+    Generates a sequence of step muls for the replay stream.
 
     In SC2 we train on observations with actions but actions in replays are
     reported in frames after they were taken. We need a step sequence so we can
