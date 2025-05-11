@@ -13,6 +13,7 @@
 # limitations under the License.
 """Launch the game and set up communication."""
 
+import logging
 import os
 import platform
 import shutil
@@ -22,23 +23,22 @@ import time
 from typing import List, Tuple
 
 import portpicker
-from absl import flags, logging
 
-from pysc2_evolved.run_configs.lib import Version, RunConfig
 from pysc2_evolved.lib import remote_controller, stopwatch
+from pysc2_evolved.run_configs.lib import RunConfig, Version
 
-flags.DEFINE_bool(
-    "sc2_verbose", False, "Enable SC2 verbose logging.", allow_hide_cpp=True
-)
-flags.DEFINE_bool("sc2_verbose_mp", False, "Enable SC2 verbose multiplayer logging.")
-flags.DEFINE_bool("sc2_gdb", False, "Run SC2 in gdb.")
-flags.DEFINE_bool("sc2_strace", False, "Run SC2 in strace.")
-flags.DEFINE_integer(
-    "sc2_port",
-    None,
-    "If set, connect to the instance on localhost:sc2_port instead of launching one.",
-)
-FLAGS = flags.FLAGS
+# flags.DEFINE_bool(
+#     "sc2_verbose", False, "Enable SC2 verbose logging.", allow_hide_cpp=True
+# )
+# flags.DEFINE_bool("sc2_verbose_mp", False, "Enable SC2 verbose multiplayer logging.")
+# flags.DEFINE_bool("sc2_gdb", False, "Run SC2 in gdb.")
+# flags.DEFINE_bool("sc2_strace", False, "Run SC2 in strace.")
+# flags.DEFINE_integer(
+#     "sc2_port",
+#     None,
+#     "If set, connect to the instance on localhost:sc2_port instead of launching one.",
+# )
+# FLAGS = flags.FLAGS
 
 sw = stopwatch.sw
 
@@ -65,12 +65,15 @@ class StarcraftProcess(object):
         full_screen: bool = False,
         extra_args: List[str] = None,
         verbose: bool = False,
+        verbose_mp: bool = False,
         host: str | None = None,
         port: int | None = None,
         connect: bool = True,
-        timeout_seconds: int | None = None,
+        timeout_seconds: int | None = 10,
         window_size: Tuple[int, int] = (640, 480),
         window_loc: Tuple[int, int] = (50, 50),
+        sc2_gdb: bool = False,
+        sc2_strace: bool = False,
         **kwargs,
     ):
         """Launch the SC2 process.
@@ -96,7 +99,13 @@ class StarcraftProcess(object):
         self._check_exists(exec_path)
         self._tmp_dir = tempfile.mkdtemp(prefix="sc-", dir=run_config.tmp_dir)
         self._host = host or "127.0.0.1"
-        self._port = FLAGS.sc2_port or port or portpicker.pick_unused_port()
+
+        self._port = None
+        if not port:
+            self._port = portpicker.pick_unused_port()
+        else:
+            self._port = port
+
         self._version = version
 
         args = [
@@ -129,23 +138,23 @@ class StarcraftProcess(object):
                     str(window_loc[1]),
                 ]
 
-        if verbose or FLAGS.sc2_verbose:
+        if verbose:  # or FLAGS.sc2_verbose:
             args += ["-verbose"]
-        if FLAGS.sc2_verbose_mp:
+        if verbose_mp:  # FLAGS.sc2_verbose_mp:
             args += ["-verboseMP"]
         if self._version and self._version.data_version:
             args += ["-dataVersion", self._version.data_version.upper()]
         if extra_args:
             args += extra_args
 
-        if FLAGS.sc2_gdb:
+        if sc2_gdb:  # FLAGS.sc2_gdb:
             print("Launching: gdb", args[0])
             print("GDB run command:")
             print("  run %s" % " ".join(args[1:]))
             print("\n")
             args = ["gdb", args[0]]
             timeout_seconds = 3600 * 6
-        elif FLAGS.sc2_strace:
+        elif sc2_strace:  # FLAGS.sc2_strace:
             strace_out = "/tmp/sc2-strace.txt"
             print("Launching in strace. Redirecting output to", strace_out)
             args = ["strace", "-f", "-o", strace_out] + args
@@ -154,11 +163,15 @@ class StarcraftProcess(object):
 
         try:
             with sw("startup"):
-                if not FLAGS.sc2_port:
+                # if not connect_to_existing:  # FLAGS.sc2_port:
+                if not port:
                     self._proc = self._launch(run_config, args, **kwargs)
                 if connect:
                     self._controller = remote_controller.RemoteController(
-                        self._host, self._port, self, timeout_seconds=timeout_seconds
+                        self._host,
+                        self._port,
+                        self,
+                        timeout_seconds=timeout_seconds,
                     )
         except:
             self.close()
@@ -173,7 +186,7 @@ class StarcraftProcess(object):
             self._controller = None
         self._shutdown()
         if hasattr(self, "_port") and self._port:
-            if not FLAGS.sc2_port:
+            if not self._port:  # FLAGS.sc2_port:
                 portpicker.return_port(self._port)
             self._port = None
         if hasattr(self, "_tmp_dir") and os.path.exists(self._tmp_dir):
@@ -236,7 +249,7 @@ class StarcraftProcess(object):
 
     @property
     def running(self):
-        if FLAGS.sc2_port:
+        if self._port:  # FLAGS.sc2_port:
             return True
         # poll returns None if it's running, otherwise the exit code.
         return self._proc and (self._proc.poll() is None)
