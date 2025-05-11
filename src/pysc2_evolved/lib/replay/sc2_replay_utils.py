@@ -19,7 +19,6 @@ from typing import List, Mapping
 
 from pysc2_evolved.lib.replay import sc2_replay
 
-
 _EVENT_TYPES_TO_FILTER_OUT = frozenset(
     [
         # Not related to actions.
@@ -50,7 +49,8 @@ class EventData:
 
 
 def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
-    """Returns player id -> list, the game loops on which each player acted.
+    """
+    Returns player id -> list, the game loops on which each player acted.
 
     Args:
       replay: An sc2_replay.SC2Replay instance.

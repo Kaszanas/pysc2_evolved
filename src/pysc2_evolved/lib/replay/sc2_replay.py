@@ -18,8 +18,8 @@ import json
 import types
 
 import mpyq
-from s2protocol import versions as s2versions
 import tree
+from s2protocol import versions as s2versions
 
 
 def _convert_to_str(s):
@@ -39,7 +39,7 @@ def _convert_all_to_str(structure):
 class SC2Replay(object):
     """Helper class for loading and extracting data using s2protocol library."""
 
-    def __init__(self, replay_data):
+    def __init__(self, replay_data: bytes):
         """Construct SC2Replay helper for extracting data from a replay."""
         (self._header, self._metadata, self._extracted, self._protocol) = _extract(
             replay_data
