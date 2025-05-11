@@ -29,10 +29,9 @@ import time
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import typer
+import click
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
-from typing_extensions import Annotated
 
 from pysc2_evolved import run_configs
 from pysc2_evolved.lib import (
@@ -41,9 +40,9 @@ from pysc2_evolved.lib import (
     point,
     protocol,
     remote_controller,
-    replay,
     static_data,
 )
+from pysc2_evolved.lib.get_replay_version import get_replay_version
 from pysc2_evolved.lib.remote_controller import RemoteController
 from pysc2_evolved.run_configs.lib import RunConfig
 from pysc2_evolved.settings import LOGGING_FORMAT
@@ -203,6 +202,7 @@ class ReplayProcessor(multiprocessing.Process):
     def __init__(
         self,
         interface,
+        step_mul: int,
         proc_id: int,
         run_config: RunConfig,
         replay_queue: multiprocessing.JoinableQueue,
@@ -211,6 +211,7 @@ class ReplayProcessor(multiprocessing.Process):
         super(ReplayProcessor, self).__init__()
 
         self.interface = interface
+        self.step_mul = step_mul
         self.proc_id = proc_id
 
         self.run_config = run_config
@@ -226,7 +227,7 @@ class ReplayProcessor(multiprocessing.Process):
         # e.g. def record_from_observation(observation)
 
         # REVIEW: This will not be needed:
-        self.stats = ProcessStats(self.proc_id)
+        self.stats = ProcessStats(step_mul=self.step_mul, proc_id=self.proc_id)
 
     def run(self):
         def exit_quietly(a, b):
@@ -396,9 +397,9 @@ class ReplayProcessor(multiprocessing.Process):
 # with implementations such as DBPersistence, DiskPersistence.
 # The goal is to save the data of all of the replays per directory on which the
 # ReplayProcessor was ran.
-def stats_printer(parallel: int, stats_queue: multiprocessing.Queue):
+def stats_printer(parallel: int, step_mul: int, stats_queue: multiprocessing.Queue):
     """A thread that consumes stats_queue and prints them every 10 seconds."""
-    proc_stats = [ProcessStats(i) for i in range(parallel)]
+    proc_stats = [ProcessStats(step_mul=step_mul, proc_id=i) for i in range(parallel)]
     print_time = start_time = time.time()
     width = 107
 
@@ -436,7 +437,12 @@ def replay_queue_filler(
         replay_queue.put(replay_path)
 
 
-def replay_actions(replays: Path, sc2_version: str, parallel: int, step_mul: int):
+def replay_actions(
+    replays: Path,
+    sc2_version: str | None,
+    parallel: int,
+    step_mul: int,
+):
     size = point.Point(16, 16)
     interface = sc_pb.InterfaceOptions(
         raw=True,
@@ -453,7 +459,14 @@ def replay_actions(replays: Path, sc2_version: str, parallel: int, step_mul: int
         sys.exit("{} doesn't exist.".format(replays))
 
     stats_queue = multiprocessing.Queue()
-    stats_thread = threading.Thread(target=stats_printer, args=(stats_queue,))
+    stats_thread = threading.Thread(
+        target=stats_printer,
+        args=(
+            parallel,
+            step_mul,
+            stats_queue,
+        ),
+    )
     try:
         # For some reason buffering everything into a JoinableQueue makes the
         # program not exit, so save it into a list then slowly fill it into the
@@ -467,7 +480,7 @@ def replay_actions(replays: Path, sc2_version: str, parallel: int, step_mul: int
             return
 
         if not sc2_version:  # ie not set explicitly.
-            version = replay.get_replay_version(run_config.replay_data(replay_list[0]))
+            version = get_replay_version(run_config.replay_data(replay_list[0]))
             run_config = run_configs.get(version=version)
             print("Assuming version:", version.game_version)
 
@@ -482,7 +495,14 @@ def replay_actions(replays: Path, sc2_version: str, parallel: int, step_mul: int
         replay_queue_thread.start()
 
         for i in range(min(len(replay_list), parallel)):
-            p = ReplayProcessor(interface, i, run_config, replay_queue, stats_queue)
+            p = ReplayProcessor(
+                interface=interface,
+                step_mul=step_mul,
+                proc_id=i,
+                run_config=run_config,
+                replay_queue=replay_queue,
+                stats_queue=stats_queue,
+            )
             p.daemon = True
             p.start()
             time.sleep(1)  # Stagger startups, otherwise they seem to conflict somehow
@@ -506,42 +526,42 @@ class LogLevel(str, enum.Enum):
     CRITICAL = "CRITICAL"
 
 
+@click.command(help="")
+@click.option(
+    "--replays",
+    type=click.Path(exists=True, file_okay=False, resolve_path=True, path_type=Path),
+    help="Path to a directory of replays.",
+)
+@click.option(
+    "--sc2_version",
+    type=str,
+    default="",
+    help="The version of SC2 to use. If not set, the latest version will be used.",
+)
+@click.option(
+    "--parallel",
+    type=int,
+    default=1,
+    help="How many instances to run in parallel.",
+)
+@click.option(
+    "--step_mul",
+    type=int,
+    default=8,
+    help="How many game steps per observation.",
+)
+@click.option(
+    "--log",
+    type=LogLevel,
+    default=LogLevel.INFO,
+    help="Set the log level.",
+)
 def main(
-    replays: Annotated[
-        Path,
-        typer.Option(
-            help="Path to a directory of replays.",
-            resolve_path=True,
-            exists=True,
-            file_okay=False,
-            required=True,
-        ),
-    ],
-    sc2_version: Annotated[
-        str,
-        typer.Option(
-            help="The version of SC2 to use. If not set, the latest version will be used.",
-        ),
-    ],
-    parallel: Annotated[
-        int,
-        typer.Option(
-            help="How many instances to run in parallel.",
-        ),
-    ] = 1,
-    step_mul: Annotated[
-        int,
-        typer.Option(
-            help="How many game steps per observation.",
-        ),
-    ] = 8,
-    log: Annotated[
-        LogLevel,
-        typer.Option(
-            help="Set the log level.",
-            case_sensitive=False,
-        ),
-    ] = LogLevel.INFO,
+    replays: Path,
+    sc2_version: str,
+    parallel: int,
+    step_mul: int,
+    log: LogLevel,
 ):
     numeric_level = getattr(logging, log.upper(), None)
     if not isinstance(numeric_level, int):
@@ -557,4 +577,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    main()
