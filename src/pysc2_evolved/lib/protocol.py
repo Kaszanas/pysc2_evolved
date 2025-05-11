@@ -21,24 +21,22 @@ import socket
 import sys
 import time
 
-from absl import flags
-from absl import logging
-from pysc2_evolved.lib import stopwatch
 import websocket
-
+from absl import logging
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved.lib import stopwatch
 
-flags.DEFINE_integer(
-    "sc2_verbose_protocol",
-    0,
-    (
-        "Print the communication packets with SC2. 0 disables. "
-        "-1 means all. >0 will print that many lines per "
-        "packet. 20 is a good starting value."
-    ),
-)
-FLAGS = flags.FLAGS
+# flags.DEFINE_integer(
+#     "sc2_verbose_protocol",
+#     0,
+#     (
+#         "Print the communication packets with SC2. 0 disables. "
+#         "-1 means all. >0 will print that many lines per "
+#         "packet. 20 is a good starting value."
+#     ),
+# )
+# FLAGS = flags.FLAGS
 
 
 sw = stopwatch.sw
@@ -80,11 +78,17 @@ def catch_websocket_connection_errors():
 class StarcraftProtocol(object):
     """Defines the protocol for chatting with starcraft."""
 
-    def __init__(self, sock):
+    def __init__(self, sock, sc2_verbose_protocol: int = 0):
+        self._sc2_verbose_protocol = sc2_verbose_protocol
+
         self._status = Status.launched
         self._sock = sock
         self._port = sock.sock.getpeername()[1]
         self._count = itertools.count(1)
+
+    @property
+    def sc2_verbose_protocol(self):
+        return self._sc2_verbose_protocol
 
     @property
     def status(self):
@@ -99,11 +103,11 @@ class StarcraftProtocol(object):
     @sw.decorate
     def read(self):
         """Read a Response, do some validation, and return it."""
-        if FLAGS.sc2_verbose_protocol:
+        if self._sc2_verbose_protocol:
             self._log("-------------- [%s] Reading response --------------", self._port)
             start = time.time()
         response = self._read()
-        if FLAGS.sc2_verbose_protocol:
+        if self._sc2_verbose_protocol:
             self._log(
                 "-------------- [%s] Read %s in %0.1f msec --------------\n%s",
                 self._port,
@@ -128,7 +132,7 @@ class StarcraftProtocol(object):
     @sw.decorate
     def write(self, request):
         """Write a Request."""
-        if FLAGS.sc2_verbose_protocol:
+        if self._sc2_verbose_protocol:
             self._log(
                 "-------------- [%s] Writing request: %s --------------\n%s",
                 self._port,
@@ -171,7 +175,7 @@ class StarcraftProtocol(object):
 
     def _packet_str(self, packet):
         """Return a string form of this packet."""
-        max_lines = FLAGS.sc2_verbose_protocol
+        max_lines = self._sc2_verbose_protocol
         packet_str = str(packet).strip()
         if max_lines <= 0:
             return packet_str
