@@ -1,5 +1,6 @@
 load("@my_deps//:requirements.bzl", "requirement")
-load("//pysc2_evolved:build_defs.bzl", "pytype_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_library")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -269,7 +270,7 @@ pytype_library(
     srcs_version = "PY3",
     deps = [
         requirement("mpyq"),
-        "//pysc2_evolved/run_configs:lib",
+        "//src/pysc2_evolved/run_configs:lib",
     ],
 )
 

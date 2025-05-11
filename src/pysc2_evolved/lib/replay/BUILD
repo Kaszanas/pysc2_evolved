@@ -1,5 +1,6 @@
 load("@my_deps//:requirements.bzl", "requirement")
-load("//pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("@rules_python//python:defs.bzl", "py_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -24,9 +25,9 @@ pytype_strict_library(
         ":sc2_replay",
         ":sc2_replay_utils",
         requirement("numpy"),
-        "//pysc2_evolved/env/converter",
-        "//pysc2_evolved/env/converter:derive_interface_options",
-        "//pysc2_evolved/env/converter/proto:converter_py_pb2",
+        "//src/pysc2_evolved/env/converter",
+        "//src/pysc2_evolved/env/converter:derive_interface_options",
+        "//src/pysc2_evolved/env/converter/proto:converter_py_pb2",
         requirement("dm-tree"),
         "@s2client_proto//s2clientprotocol:sc2api_py_pb2",
     ],
@@ -39,7 +40,7 @@ pytype_strict_library(
     deps = [
         "@absl_py//absl/logging",
         requirement("mpyq"),
-        "//pysc2_evolved/run_configs",
+        "//src/pysc2_evolved/run_configs",
         "@s2client_proto//s2clientprotocol:sc2api_py_pb2",
     ],
 )
@@ -58,14 +59,14 @@ pytype_strict_library(
 py_test(
     name = "sc2_replay_test",
     srcs = ["sc2_replay_test.py"],
-    data = ["//pysc2_evolved/lib/replay:test_data/replay_01.SC2Replay"],
+    data = ["//src/pysc2_evolved/lib/replay:test_data/replay_01.SC2Replay"],
     legacy_create_init = False,
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
         ":sc2_replay",
-        "//pysc2_evolved/lib:gfile",
-        "//pysc2_evolved/lib:resources",
+        "//src/pysc2_evolved/lib:gfile",
+        "//src/pysc2_evolved/lib:resources",
         "@absl_py//absl/flags",
         "@absl_py//absl/testing:absltest",
     ],
@@ -82,10 +83,10 @@ py_test(
     name = "sc2_replay_utils_test",
     srcs = ["sc2_replay_utils_test.py"],
     data = [
-        "//pysc2_evolved/lib/replay:test_data/replay_0" + str(i) + ".SC2Replay"
+        "//src/pysc2_evolved/lib/replay:test_data/replay_0" + str(i) + ".SC2Replay"
         for i in range(1, 10)
     ] + [
-        "//pysc2_evolved/lib/replay:test_data/replay_0" + str(i) + ".skips.txt"
+        "//src/pysc2_evolved/lib/replay:test_data/replay_0" + str(i) + ".skips.txt"
         for i in range(1, 10)
     ],
     legacy_create_init = False,
@@ -94,8 +95,8 @@ py_test(
     deps = [
         ":sc2_replay",
         ":sc2_replay_utils",
-        "//pysc2_evolved/lib:gfile",
-        "//pysc2_evolved/lib:resources",
+        "//src/pysc2_evolved/lib:gfile",
+        "//src/pysc2_evolved/lib:resources",
         "@absl_py//absl/flags",
         "@absl_py//absl/testing:absltest",
         "@absl_py//absl/testing:parameterized",

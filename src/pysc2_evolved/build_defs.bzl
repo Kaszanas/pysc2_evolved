@@ -14,14 +14,17 @@
 
 """BUILD rules for compatibility with pytype and strict targets."""
 
+load("@rules_python//python:defs.bzl", "py_library", "py_binary")
+
+# Update the functions to use the loaded py_library and py_binary
 def pytype_library(name, **kwargs):
-    native.py_library(name = name, **kwargs)
+    py_library(name = name, **kwargs)
 
 def pytype_binary(name, **kwargs):
-    native.py_binary(name = name, **kwargs)
+    py_binary(name = name, **kwargs)
 
 def pytype_strict_library(name, **kwargs):
-    native.py_library(name = name, **kwargs)
+    py_library(name = name, **kwargs)
 
 def pytype_strict_binary(name, **kwargs):
-    native.py_binary(name = name, **kwargs)
+    py_binary(name = name, **kwargs)

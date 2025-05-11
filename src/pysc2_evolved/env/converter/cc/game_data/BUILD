@@ -1,4 +1,5 @@
-load("//pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -20,9 +21,9 @@ cc_library(
     srcs = ["uint8_lookup.cc"],
     hdrs = ["uint8_lookup.h"],
     deps = [
-        "//pysc2_evolved/env/converter/cc/game_data/proto:buffs_cc_proto",
-        "//pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
-        "//pysc2_evolved/env/converter/cc/game_data/proto:upgrades_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:buffs_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:upgrades_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@glog",
     ],

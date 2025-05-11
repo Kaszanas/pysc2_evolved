@@ -1,4 +1,6 @@
-load("//pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -30,7 +32,7 @@ cc_library(
         ":raw_actions_encoder",
         ":raw_camera",
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
+        "//src/pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@dm_env_rpc_archive//:dm_env_rpc_cc_proto",
@@ -46,15 +48,15 @@ cc_test(
     name = "convert_obs_test",
     srcs = ["convert_obs_test.cc"],
     data = [
-        "//pysc2_evolved/env/converter/cc/test_data:example_recordings",
+        "//src/pysc2_evolved/env/converter/cc/test_data:example_recordings",
     ],
     deps = [
         ":convert_obs",
         ":file_util",
         ":map_util",
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest_main",
@@ -74,7 +76,7 @@ cc_library(
         ":tensor_util",
         ":unit_lookups",
         ":visual_converter",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
@@ -92,8 +94,8 @@ cc_test(
     deps = [
         ":check_protos_equal",
         ":converter",
-        "//pysc2_evolved/env/converter/cc/game_data:raw_actions",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data:raw_actions",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
@@ -122,7 +124,7 @@ cc_library(
     srcs = ["features.cc"],
     hdrs = ["features.h"],
     deps = [
-        "//pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
+        "//src/pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
@@ -148,7 +150,7 @@ cc_library(
     hdrs = ["general_order_ids.h"],
     deps = [
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data:raw_actions",
+        "//src/pysc2_evolved/env/converter/cc/game_data:raw_actions",
         "@com_google_absl//absl/container:flat_hash_map",
         "@dm_env_rpc_archive//:dm_env_rpc_cc_proto",
     ],
@@ -170,7 +172,7 @@ cc_library(
     hdrs = ["raw_actions_encoder.h"],
     deps = [
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data:raw_actions",
+        "//src/pysc2_evolved/env/converter/cc/game_data:raw_actions",
         "@com_google_absl//absl/container:fixed_array",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -190,13 +192,13 @@ cc_test(
     name = "raw_actions_encoder_test",
     srcs = ["raw_actions_encoder_test.cc"],
     data = [
-        "//pysc2_evolved/env/converter/cc/test_data:example_observations",
+        "//src/pysc2_evolved/env/converter/cc/test_data:example_observations",
     ],
     deps = [
         ":file_util",
         ":map_util",
         ":raw_actions_encoder",
-        "//pysc2_evolved/env/converter/cc/game_data:raw_actions",
+        "//src/pysc2_evolved/env/converter/cc/game_data:raw_actions",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
@@ -230,8 +232,8 @@ cc_library(
         ":raw_actions_encoder",
         ":raw_camera",
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data:uint8_lookup",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
@@ -260,7 +262,7 @@ cc_library(
     srcs = ["unit_lookups.cc"],
     hdrs = ["unit_lookups.h"],
     deps = [
-        "//pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@glog",
         "@s2client_proto//s2clientprotocol:common_cc_proto",
@@ -272,7 +274,7 @@ cc_test(
     srcs = ["unit_lookups_test.cc"],
     deps = [
         ":unit_lookups",
-        "//pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
+        "//src/pysc2_evolved/env/converter/cc/game_data/proto:units_cc_proto",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -283,7 +285,7 @@ cc_library(
     hdrs = ["visual_actions.h"],
     deps = [
         ":tensor_util",
-        "//pysc2_evolved/env/converter/cc/game_data:visual_actions",
+        "//src/pysc2_evolved/env/converter/cc/game_data:visual_actions",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@dm_env_rpc_archive//:dm_env_rpc_cc_proto",
@@ -299,7 +301,7 @@ cc_test(
     name = "visual_actions_test",
     srcs = ["visual_actions_test.cc"],
     data = [
-        "//pysc2_evolved/env/converter/cc/test_data:example_actions",
+        "//src/pysc2_evolved/env/converter/cc/test_data:example_actions",
     ],
     deps = [
         ":check_protos_equal",
@@ -321,7 +323,7 @@ cc_library(
         ":features",
         ":tensor_util",
         ":visual_actions",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
@@ -343,7 +345,7 @@ cc_test(
         ":features",
         ":tensor_util",
         ":visual_converter",
-        "//pysc2_evolved/env/converter/proto:converter_cc_proto",
+        "//src/pysc2_evolved/env/converter/proto:converter_cc_proto",
         "@com_google_absl//absl/status",
         "@dm_env_rpc_archive//:dm_env_rpc_cc_proto",
         "@com_google_googletest//:gtest_main",
