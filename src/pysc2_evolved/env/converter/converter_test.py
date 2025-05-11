@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from absl.testing import absltest
-from absl.testing import parameterized
 import numpy as np
+from absl.testing import absltest, parameterized
+from s2clientprotocol import common_pb2, raw_pb2, sc2api_pb2, spatial_pb2
+
 from pysc2_evolved.env.converter import converter
 from pysc2_evolved.env.converter.proto import converter_pb2
-from s2clientprotocol import common_pb2
-from s2clientprotocol import raw_pb2
-from s2clientprotocol import sc2api_pb2
-from s2clientprotocol import spatial_pb2
 
 NUM_ACTION_TYPES = 539
 MAX_UNIT_COUNT = 16

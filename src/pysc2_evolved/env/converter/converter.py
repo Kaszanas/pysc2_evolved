@@ -21,17 +21,16 @@ more naturally.
 from typing import Any, Mapping
 
 from dm_env import specs
+from dm_env_rpc.v1 import dm_env_rpc_pb2, dm_env_utils, tensor_utils
+from s2clientprotocol import sc2api_pb2
+
 from pysc2_evolved.env.converter.cc.python import converter
 from pysc2_evolved.env.converter.proto import converter_pb2
 
-from dm_env_rpc.v1 import dm_env_rpc_pb2
-from dm_env_rpc.v1 import dm_env_utils
-from dm_env_rpc.v1 import tensor_utils
-from s2clientprotocol import sc2api_pb2
-
 
 class Converter:
-    """PySC2 environment converter.
+    """
+    PySC2 environment converter.
 
     Converts the PySC2 observation/action interface, supporting more standard
     interaction with an ML agent and providing enriched observations.
