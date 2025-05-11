@@ -34,7 +34,7 @@ def main(argv):
     # to update the version field properly (eg 5.0.0).
     versions = set()
 
-    def replay_version(replay_path):
+    def replay_version(replay_path: str):
         """Query a replay for information."""
         if replay_path.lower().endswith("sc2replay"):
             data = run_config.replay_data(replay_path)
