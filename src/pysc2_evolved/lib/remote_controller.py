@@ -19,28 +19,25 @@ import socket
 import sys
 import time
 
-from absl import flags
-from absl import logging
-from pysc2_evolved.lib import protocol
-from pysc2_evolved.lib import static_data
-from pysc2_evolved.lib import stopwatch
 import websocket
-
+from absl import logging
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
-flags.DEFINE_bool(
-    "sc2_log_actions",
-    False,
-    (
-        "Print all the actions sent to SC2. If you want observations"
-        " as well, consider using `sc2_verbose_protocol`."
-    ),
-)
-flags.DEFINE_integer(
-    "sc2_timeout", 360, "Timeout to connect and wait for rpc responses."
-)
-FLAGS = flags.FLAGS
+from pysc2_evolved.lib import protocol, static_data, stopwatch
+
+# flags.DEFINE_bool(
+#     "sc2_log_actions",
+#     False,
+#     (
+#         "Print all the actions sent to SC2. If you want observations"
+#         " as well, consider using `sc2_verbose_protocol`."
+#     ),
+# )
+# flags.DEFINE_integer(
+#     "sc2_timeout", 360, "Timeout to connect and wait for rpc responses."
+# )
+# FLAGS = flags.FLAGS
 
 sw = stopwatch.sw
 
@@ -155,15 +152,24 @@ class RemoteController(object):
     than a Response* object.
     """
 
-    def __init__(self, host, port, proc=None, timeout_seconds=None):
-        timeout_seconds = timeout_seconds or FLAGS.sc2_timeout
+    def __init__(
+        self,
+        host: str,
+        port: int | str,
+        proc=None,
+        timeout_seconds: int | None = 10,
+        sc2_log_actions: bool = False,
+    ):
+        self.sc2_log_actions = sc2_log_actions
+
+        timeout_seconds = timeout_seconds  # or FLAGS.sc2_timeout
         sock = self._connect(host, port, proc, timeout_seconds)
-        self._client = protocol.StarcraftProtocol(sock)
+        self._client = protocol.StarcraftProtocol(sock=sock)
         self._last_obs = None
         self.ping()
 
     @sw.decorate
-    def _connect(self, host, port, proc, timeout_seconds):
+    def _connect(self, host: str, port: int | str, proc, timeout_seconds: int):
         """Connect to the websocket, retrying as needed. Returns the socket."""
         if ":" in host and not host.startswith("["):  # Support ipv6 addresses.
             host = "[%s]" % host
@@ -182,7 +188,7 @@ class RemoteController(object):
                 "Connecting to: %s, attempt: %s, running: %s", url, i, is_running
             )
             try:
-                return websocket.create_connection(url, timeout=timeout_seconds)
+                return websocket.create_connection(url=url, timeout=timeout_seconds)
             except socket.error:
                 pass  # SC2 hasn't started listening yet.
             except websocket.WebSocketConnectionClosedException:
@@ -272,7 +278,7 @@ class RemoteController(object):
 
     @valid_status(Status.in_game, Status.in_replay, Status.ended)
     @sw.decorate
-    def observe(self, disable_fog=False, target_game_loop=0):
+    def observe(self, disable_fog: bool = False, target_game_loop: int = 0):
         """Get a current observation."""
         obs = self._client.send(
             observation=sc_pb.RequestObservation(
@@ -299,7 +305,7 @@ class RemoteController(object):
         else:
             self._last_obs = obs
 
-        if FLAGS.sc2_log_actions and obs.actions:
+        if self.sc2_log_actions and obs.actions:  # FLAGS.sc2_log_actions :
             sys.stderr.write(" Executed actions ".center(60, "<") + "\n")
             for action in obs.actions:
                 sys.stderr.write(str(action))
@@ -323,7 +329,7 @@ class RemoteController(object):
     @sw.decorate
     def actions(self, req_action):
         """Send a `sc_pb.RequestAction`, which may include multiple actions."""
-        if FLAGS.sc2_log_actions and req_action.actions:
+        if self.sc2_log_actions and req_action.actions:  # FLAGS.sc2_log_actions:
             sys.stderr.write(" Sending actions ".center(60, ">") + "\n")
             for action in req_action.actions:
                 sys.stderr.write(str(action))
@@ -341,7 +347,9 @@ class RemoteController(object):
     @sw.decorate
     def observer_actions(self, req_observer_action):
         """Send a `sc_pb.RequestObserverAction`."""
-        if FLAGS.sc2_log_actions and req_observer_action.actions:
+        if (
+            self.sc2_log_actions and req_observer_action.actions
+        ):  # FLAGS.sc2_log_actions and :
             sys.stderr.write(" Sending observer actions ".center(60, ">") + "\n")
             for action in req_observer_action.actions:
                 sys.stderr.write(str(action))
