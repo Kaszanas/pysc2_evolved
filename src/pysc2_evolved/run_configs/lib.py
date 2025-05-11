@@ -18,7 +18,7 @@ import datetime
 import os
 from typing import Any, Dict, Generator, List
 
-from pysc2_evolved.lib import gfile
+from pysc2_evolved.lib import gfile, sc_process
 
 
 class Version(
@@ -591,7 +591,8 @@ class RunConfig(object):
             f.write(replay_data)
         return replay_path
 
-    def start(self, version=None, **kwargs):
+    # REVIEW: version seems to be unused in all of the child classes that implement this:
+    def start(self, version=None, **kwargs) -> "sc_process.StarcraftProcess":
         """Launch the game. Find the version and run sc_process.StarcraftProcess."""
         raise NotImplementedError()
 
@@ -604,11 +605,11 @@ class RunConfig(object):
                 yield c
 
     @classmethod
-    def name(cls):
+    def name(cls) -> str:
         return cls.__name__
 
     @classmethod
-    def priority(cls):
+    def priority(cls) -> int | None:
         """None means this isn't valid. Run the one with the max priority."""
         return None
 
