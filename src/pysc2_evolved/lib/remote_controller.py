@@ -25,6 +25,7 @@ from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
 from pysc2_evolved.lib import protocol, static_data, stopwatch
+from pysc2_evolved.settings import TIMEOUT_SECONDS
 
 # flags.DEFINE_bool(
 #     "sc2_log_actions",
@@ -157,7 +158,7 @@ class RemoteController(object):
         host: str,
         port: int | str,
         proc=None,
-        timeout_seconds: int | None = 10,
+        timeout_seconds: int | None = TIMEOUT_SECONDS,
         sc2_log_actions: bool = False,
     ):
         self.sc2_log_actions = sc2_log_actions

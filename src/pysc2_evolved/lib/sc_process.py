@@ -26,6 +26,7 @@ import portpicker
 
 from pysc2_evolved.lib import remote_controller, stopwatch
 from pysc2_evolved.run_configs.lib import RunConfig, Version
+from pysc2_evolved.settings import TIMEOUT_SECONDS
 
 # flags.DEFINE_bool(
 #     "sc2_verbose", False, "Enable SC2 verbose logging.", allow_hide_cpp=True
@@ -69,7 +70,7 @@ class StarcraftProcess(object):
         host: str | None = None,
         port: int | None = None,
         connect: bool = True,
-        timeout_seconds: int | None = 10,
+        timeout_seconds: int | None = TIMEOUT_SECONDS,
         window_size: Tuple[int, int] = (640, 480),
         window_loc: Tuple[int, int] = (50, 50),
         sc2_gdb: bool = False,
