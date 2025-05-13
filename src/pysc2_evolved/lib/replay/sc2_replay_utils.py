@@ -15,7 +15,7 @@
 
 import collections
 import dataclasses
-from typing import List, Mapping
+from typing import List, Mapping, Set
 
 from pysc2_evolved.lib.replay import sc2_replay
 
@@ -48,6 +48,37 @@ class EventData:
     event_type: str
 
 
+@dataclasses.dataclass
+class PlayerIDs:
+    user_id: int
+    player_id: int
+    slot_id: int
+
+
+def get_active_players(replay: sc2_replay.SC2Replay) -> Set[PlayerIDs]:
+    user_id_set = set()
+
+    for event in replay.tracker_events():
+        event_type = _readable_event_type(event["_event"])
+
+        # We are only interested in the PlayerSetup event.
+        # This is important for the participating players more so than the observers.
+        if event_type != "PlayerSetup":
+            continue
+
+        # This should be the user ID of the participating player:
+        user_id = event["_userid"]["m_userId"]
+        player_id = event["_userid"]["m_playerId"]
+        slot_id = event["_userid"]["m_slotId"]
+
+        if user_id not in user_id_set:
+            user_id_set.add(
+                PlayerIDs(user_id=user_id, player_id=player_id, slot_id=slot_id)
+            )
+
+    return user_id_set
+
+
 def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
     """
     Returns player id -> list, the game loops on which each player acted.
@@ -60,20 +91,48 @@ def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
     """
     action_frames = collections.defaultdict(list)
     last_game_loop = None
+
+    # Acquiring only the active players without observers:
+    active_players = get_active_players(replay=replay)
+    active_user_id_to_player_id = {
+        player_object.user_id: player_object.player_id
+        for player_object in active_players
+    }
+
     # Extract per-user events of interest.
     for event in replay.game_events():
         event_type = _readable_event_type(event["_event"])
         if event_type not in _EVENT_TYPES_TO_FILTER_OUT:
             game_loop = event["_gameloop"]
             last_game_loop = game_loop
+
+            # TODO:
+            # REVIEW: This only works for replays that have two players.
+            # Need to verify that the observerss or other users are always with
+            # ID above 2, then it is safe to say that such events can be skipped.
+            # Then there would be no need to raise this exception.
+            user_id = event["_userid"]["m_userId"]
+            # player_id = user_id + 1
+
+            player_id = None
+            if player_id not in active_user_id_to_player_id:
+                # This is an observer or a referee.
+                # We can skip this event.
+                continue
+            player_id = active_user_id_to_player_id[user_id]
+
+            # REVIEW: Observers/referees can leave the game before.
+            # We need to make sure that this pertains only to the active players.
             # As soon as anyone leaves, we stop tracking events.
+
+            # We check if the user left only in case of active players.
+            # We do not care if the observers leave the game:
             if event_type == "GameUserLeave":
                 break
 
-            user_id = event["_userid"]["m_userId"]
-            player_id = user_id + 1
-            if player_id < 1 or player_id > 2:
-                raise ValueError(f"Unexpected player_id: {player_id}")
+            # REVIEW: This check is not true for replays with observers:
+            # if player_id < 1 or player_id > 2:
+            #     raise ValueError(f"Unexpected player_id: {player_id}")
             if (
                 action_frames[player_id]
                 and action_frames[player_id][-1].game_loop == game_loop
