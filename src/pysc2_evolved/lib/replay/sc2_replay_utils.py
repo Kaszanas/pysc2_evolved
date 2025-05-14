@@ -15,7 +15,7 @@
 
 import collections
 import dataclasses
-from typing import List, Mapping, Set
+from typing import Any, Dict, List, Mapping
 
 from pysc2_evolved.lib.replay import sc2_replay
 
@@ -50,33 +50,119 @@ class EventData:
 
 @dataclasses.dataclass
 class PlayerIDs:
-    user_id: int
-    player_id: int
-    slot_id: int
+    player_name: str | None = None
+    player_toon: str | None = None
+    user_id: int | None = None
+    player_id: int | None = None
+    slot_id: int | None = None
+
+    def __hash__(self):
+        return hash(
+            (
+                self.player_name,
+                self.player_toon,
+                self.user_id,
+                self.player_id,
+                self.slot_id,
+            )
+        )
 
 
-def get_active_players(replay: sc2_replay.SC2Replay) -> Set[PlayerIDs]:
-    user_id_set = set()
+def get_detail_player_list(replay: sc2_replay.SC2Replay) -> List[Dict[str, Any]]:
+    details = replay.details()
+    details_player_list = details["m_playerList"]
+    for player in details_player_list:
+        toon_object = player["m_toon"]
+        region = toon_object["m_region"]
+        program_id = toon_object["m_programId"][-2:]
+        realm = toon_object["m_realm"]
+        m_id = toon_object["m_id"]
+
+        toon_string = f"{region}-{program_id}-{realm}-{m_id}"
+        player["m_toon"] = toon_string
+
+    return details_player_list
+
+
+def get_init_data_slot_list(replay: sc2_replay.SC2Replay) -> List[Dict[str, Any]]:
+    init_data = replay.init_data()
+    init_data_sync_lobby_state = init_data["m_syncLobbyState"]
+    init_data_lobby_state = init_data_sync_lobby_state["m_lobbyState"]
+    init_data_slots = init_data_lobby_state["m_slots"]
+
+    return init_data_slots
+
+
+def get_nickname_from_toon(
+    slot_list: List[Dict[str, Any]],
+    details_player_list: List[Dict[str, Any]],
+) -> Dict[str, PlayerIDs]:
+    toon_to_player_dict = {}
+    for details_player in details_player_list:
+        player_toon = details_player["m_toon"]
+        player_name = details_player["m_name"]
+
+        toon_to_player_dict[player_toon] = PlayerIDs(
+            player_name=player_name, player_toon=player_toon
+        )
+
+    for index, slot_data in enumerate(slot_list):
+        slot_toon = slot_data["m_toonHandle"]
+        if slot_toon in toon_to_player_dict:
+            slot_index = index
+            user_id = slot_data["m_userId"]
+
+            toon_to_player_dict[slot_toon].slot_id = slot_index
+            toon_to_player_dict[slot_toon].user_id = user_id
+
+    return toon_to_player_dict
+
+
+def get_user_id_to_PlayerIDs_mapping(
+    toon_to_player_ids_mapping: Dict[str, PlayerIDs],
+) -> Dict[str, PlayerIDs]:
+    new_dict = dict()
+    for _, value in toon_to_player_ids_mapping.items():
+        new_dict[value.user_id] = value
+
+    return new_dict
+
+
+def get_active_players(replay: sc2_replay.SC2Replay) -> Dict[str, PlayerIDs]:
+    slots = get_init_data_slot_list(replay=replay)
+    details_player_list = get_detail_player_list(replay=replay)
+
+    toon_to_player_ids_mapping = get_nickname_from_toon(
+        slot_list=slots, details_player_list=details_player_list
+    )
+
+    user_id_to_object_mapping = get_user_id_to_PlayerIDs_mapping(
+        toon_to_player_ids_mapping=toon_to_player_ids_mapping
+    )
 
     for event in replay.tracker_events():
-        event_type = _readable_event_type(event["_event"])
+        # event_type = _readable_event_type(event["_event"])
+
+        event_type = event["_event"].split(".")[-1]
 
         # We are only interested in the PlayerSetup event.
         # This is important for the participating players more so than the observers.
-        if event_type != "PlayerSetup":
+        if event_type != "SPlayerSetupEvent":
             continue
 
         # This should be the user ID of the participating player:
-        user_id = event["_userid"]["m_userId"]
-        player_id = event["_userid"]["m_playerId"]
-        slot_id = event["_userid"]["m_slotId"]
+        user_id = event["m_userId"]
+        active_player_object = user_id_to_object_mapping[user_id]
 
-        if user_id not in user_id_set:
-            user_id_set.add(
-                PlayerIDs(user_id=user_id, player_id=player_id, slot_id=slot_id)
-            )
+        player_id = event["m_playerId"]
+        active_player_object.player_id = player_id
 
-    return user_id_set
+        # slot_id = event["m_slotId"]
+
+        # TODO: It is possible to get the user toon from the slot.
+        # But how do I get other user information such as nickname?
+
+    return user_id_to_object_mapping
 
 
 def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
@@ -93,11 +179,7 @@ def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
     last_game_loop = None
 
     # Acquiring only the active players without observers:
-    active_players = get_active_players(replay=replay)
-    active_user_id_to_player_id = {
-        player_object.user_id: player_object.player_id
-        for player_object in active_players
-    }
+    active_players_user_id_map = get_active_players(replay=replay)
 
     # Extract per-user events of interest.
     for event in replay.game_events():
@@ -114,17 +196,16 @@ def raw_action_skips(replay: sc2_replay.SC2Replay) -> Mapping[int, List[int]]:
             user_id = event["_userid"]["m_userId"]
             # player_id = user_id + 1
 
-            player_id = None
-            if player_id not in active_user_id_to_player_id:
-                # This is an observer or a referee.
-                # We can skip this event.
+            # We don't care about observers and other users for now:
+            if user_id not in active_players_user_id_map:
                 continue
-            player_id = active_user_id_to_player_id[user_id]
+
+            player_information = active_players_user_id_map[user_id]
+            player_id = player_information.player_id
 
             # REVIEW: Observers/referees can leave the game before.
             # We need to make sure that this pertains only to the active players.
             # As soon as anyone leaves, we stop tracking events.
-
             # We check if the user left only in case of active players.
             # We do not care if the observers leave the game:
             if event_type == "GameUserLeave":
