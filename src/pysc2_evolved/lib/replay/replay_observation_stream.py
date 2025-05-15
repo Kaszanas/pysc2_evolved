@@ -139,8 +139,15 @@ class ReplayObservationStream(object):
                 proc.close()
         self._sc2_procs = []
 
-    def start_replay_from_data(self, replay_data: bytes, player_id: int):
-        """Starts the stream of replay observations from an in-memory replay."""
+    def start_replay_from_data(
+        self,
+        replay_data: bytes,
+        player_id: int,
+        opponent_id: int | None,
+    ):
+        """
+        Starts the stream of replay observations from an in-memory replay.
+        """
         self._player_id = player_id
 
         try:
@@ -149,10 +156,13 @@ class ReplayObservationStream(object):
             logging.exception("Error getting replay version from data: %s", err)
             raise ReplayError(err)
 
-        if self._add_opponent_observations:
+        # Attempt to calculate the opponent ID if it was not supplied by the caller.
+        # This will most likely fail for any replay that has additional observers,
+        # referees or casters. It is an naive way to calculate the player_id.
+        if self._add_opponent_observations and not opponent_id:
             player_ids = [player_id, (player_id % 2) + 1]
         else:
-            player_ids = [player_id]
+            player_ids = [player_id, opponent_id]
         start_requests = []
         for p_id in player_ids:
             start_requests.append(

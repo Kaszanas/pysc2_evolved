@@ -128,6 +128,14 @@ def get_user_id_to_PlayerIDs_mapping(
     return new_dict
 
 
+def get_player_ids(user_id_to_object_mapping: Dict[int, PlayerIDs]):
+    player_id_to_info_mapping = {}
+    for _, player_ids in user_id_to_object_mapping.items():
+        player_id_to_info_mapping[player_ids.player_id] = player_ids
+
+    return player_id_to_info_mapping
+
+
 def get_active_players(replay: sc2_replay.SC2Replay) -> Dict[str, PlayerIDs]:
     slots = get_init_data_slot_list(replay=replay)
     details_player_list = get_detail_player_list(replay=replay)
