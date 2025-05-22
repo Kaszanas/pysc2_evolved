@@ -17,10 +17,11 @@ import io
 import json
 import logging
 import time
-from typing import List
+from typing import Generator, List
 
 import mpyq
 from s2clientprotocol import sc2api_pb2 as sc_pb
+from s2clientprotocol.sc2api_pb2 import ResponseObservation
 
 from pysc2_evolved import run_configs
 from pysc2_evolved.lib.remote_controller import RemoteController
@@ -200,7 +201,10 @@ class ReplayObservationStream(object):
     def static_data(self):
         return self._controllers[0].data()
 
-    def observations(self, step_sequence: List[int] | None = None):
+    def observations(
+        self,
+        step_sequence: List[int] | None = None,
+    ) -> Generator[ResponseObservation | List[ResponseObservation], None, None]:
         """
         Yields a ResponseObservation proto for each environment step.
 
