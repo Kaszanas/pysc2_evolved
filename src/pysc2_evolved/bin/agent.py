@@ -17,7 +17,7 @@
 import importlib
 import threading
 from dataclasses import dataclass
-from typing import List
+from typing import List, TypeVar
 
 import click
 
@@ -26,10 +26,12 @@ from pysc2_evolved.agents.base_agent import BaseAgent
 from pysc2_evolved.env import available_actions_printer, run_loop, sc2_env
 from pysc2_evolved.lib import stopwatch
 
+ImplementsBaseAgent = TypeVar("ImplementsBaseAgent", bound=BaseAgent)
+
 
 @dataclass
 class RunThreadArgs:
-    agent_classes: List[BaseAgent]
+    agent_classes: List[ImplementsBaseAgent]
     players: List[sc2_env.Agent]
     map_name: str
     visualize: bool
@@ -70,7 +72,10 @@ def run_thread(run_thread_args: RunThreadArgs):
         env = available_actions_printer.AvailableActionsPrinter(env)
         agents = [agent_cls() for agent_cls in run_thread_args.agent_classes]
         run_loop.run_loop(
-            agents, env, run_thread_args.max_agent_steps, run_thread_args.max_episodes
+            agents=agents,
+            env=env,
+            max_frames=run_thread_args.max_agent_steps,
+            max_episodes=run_thread_args.max_episodes,
         )
         if run_thread_args.save_replay:
             env.save_replay(run_thread_args.agent_classes[0].__name__)

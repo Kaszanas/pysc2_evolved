@@ -14,8 +14,7 @@
 # limitations under the License.
 """Test for sc2_env."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+from absl.testing import absltest, parameterized
 
 from pysc2_evolved.env import sc2_env
 

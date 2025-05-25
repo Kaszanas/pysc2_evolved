@@ -16,14 +16,11 @@
 from typing import Sequence
 
 from absl import logging
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import remote_controller
-from pysc2_evolved.lib import run_parallel
-
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.env import sc2_env
+from pysc2_evolved.lib import features, remote_controller, run_parallel
 
 
 class RestartError(Exception):
@@ -140,7 +137,8 @@ class RemoteSC2Env(sc2_env.SC2Env):
         self._action_delay_fns = [None]
 
         interface = self._get_interface(
-            agent_interface_format=agent_interface_format, require_raw=visualize
+            agent_interface_format=agent_interface_format,
+            require_raw=visualize,
         )
 
         if isinstance(lan_port, Sequence):
@@ -151,15 +149,15 @@ class RemoteSC2Env(sc2_env.SC2Env):
             ports = [lan_port + p for p in range(4)]  # 2 * num players *in the game*.
 
         self._connect_remote(
-            host,
-            host_port,
-            ports,
-            race,
-            name,
-            map_inst,
-            save_map,
-            interface,
-            agent_interface_format,
+            host=host,
+            host_port=host_port,
+            lan_ports=ports,
+            race=race,
+            name=name,
+            map_inst=map_inst,
+            save_map=save_map,
+            interface=interface,
+            agent_interface_format=agent_interface_format,
         )
 
         self._finalize(visualize)
@@ -184,13 +182,13 @@ class RemoteSC2Env(sc2_env.SC2Env):
 
     def _connect_remote(
         self,
-        host,
+        host: str,
         host_port,
         lan_ports,
         race,
-        name,
+        name: str,
         map_inst,
-        save_map,
+        save_map: bool,
         interface,
         agent_interface_format,
     ):

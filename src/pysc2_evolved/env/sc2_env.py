@@ -16,10 +16,10 @@
 
 import collections
 import copy
+import logging
 import random
 import time
 
-from absl import logging
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
 from pysc2_evolved import maps, run_configs
@@ -373,17 +373,20 @@ class SC2Env(environment.Base):
         self._step_mul = max(1, self._default_step_mul or map_inst.step_mul)
         self._score_index = get_default(self._default_score_index, map_inst.score_index)
         self._score_multiplier = get_default(
-            self._default_score_multiplier, map_inst.score_multiplier
+            self._default_score_multiplier,
+            map_inst.score_multiplier,
         )
         self._episode_length = get_default(
-            self._default_episode_length, map_inst.game_steps_per_episode
+            self._default_episode_length,
+            map_inst.game_steps_per_episode,
         )
         if self._episode_length <= 0 or self._episode_length > MAX_STEP_COUNT:
             self._episode_length = MAX_STEP_COUNT
 
         # Create the game. Set the first instance as the host.
         create = sc_pb.RequestCreateGame(
-            disable_fog=self._disable_fog, realtime=self._realtime
+            disable_fog=self._disable_fog,
+            realtime=self._realtime,
         )
 
         if self._battle_net_map:
@@ -397,8 +400,8 @@ class SC2Env(environment.Base):
                 # Save the maps so they can access it. Don't do it in parallel since SC2
                 # doesn't respect tmpdir on windows, which leads to a race condition:
                 # https://github.com/Blizzard/s2client-proto/issues/102
-                for c in self._controllers:
-                    c.save_map(map_inst.path, map_data)
+                for controller in self._controllers:
+                    controller.save_map(map_inst.path, map_data)
         if self._random_seed is not None:
             create.random_seed = self._random_seed
         for p in self._players:
