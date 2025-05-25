@@ -102,8 +102,7 @@ class SC2Env(environment.Base):
         battle_net_map: bool = False,
         players: Sequence[Agent | Bot] | None = None,
         agent_interface_format: features.AgentInterfaceFormat
-        | sc_pb.InterfaceOptions
-        | Sequence[features.AgentInterfaceFormat | sc_pb.InterfaceOptions]
+        | Sequence[features.AgentInterfaceFormat]
         | None = None,
         discount: float = 1.0,
         discount_zero_after_timeout: bool = False,
