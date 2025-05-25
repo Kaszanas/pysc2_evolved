@@ -19,6 +19,7 @@ import copy
 import logging
 import random
 import time
+from typing import Sequence
 
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -96,27 +97,30 @@ class SC2Env(environment.Base):
 
     def __init__(
         self,
-        *,
-        map_name=None,
-        battle_net_map=False,
-        players=None,
-        agent_interface_format=None,
-        discount=1.0,
-        discount_zero_after_timeout=False,
-        visualize=False,
-        step_mul=None,
-        realtime=False,
-        save_replay_episodes=0,
-        replay_dir=None,
-        replay_prefix=None,
-        game_steps_per_episode=None,
-        score_index=None,
-        score_multiplier=None,
-        random_seed=None,
-        disable_fog=False,
-        ensure_available_actions=True,
-        version=None,
-    ):
+        *,  # Force keyword arguments
+        map_name: str | Sequence[str] | None = None,
+        battle_net_map: bool = False,
+        players: Sequence[Agent | Bot] | None = None,
+        agent_interface_format: features.AgentInterfaceFormat
+        | sc_pb.InterfaceOptions
+        | Sequence[features.AgentInterfaceFormat | sc_pb.InterfaceOptions]
+        | None = None,
+        discount: float = 1.0,
+        discount_zero_after_timeout: bool = False,
+        visualize: bool = False,
+        step_mul: int | None = None,
+        realtime: bool = False,
+        save_replay_episodes: int = 0,
+        replay_dir: str | None = None,
+        replay_prefix: str | None = None,
+        game_steps_per_episode: int | None = None,
+        score_index: int | None = None,
+        score_multiplier: float | None = None,
+        random_seed: int | None = None,
+        disable_fog: bool = False,
+        ensure_available_actions: bool = True,
+        version: str | None = None,
+    ) -> None:
         """Create a SC2 Env.
 
         You must pass a resolution that you want to play at. You can send either
