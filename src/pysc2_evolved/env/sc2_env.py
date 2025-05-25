@@ -20,19 +20,19 @@ import random
 import time
 
 from absl import logging
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.env import enums
-from pysc2_evolved.env import environment
-from pysc2_evolved.lib import actions as actions_lib
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import metrics
-from pysc2_evolved.lib import portspicker
-from pysc2_evolved.lib import renderer_human
-from pysc2_evolved.lib import run_parallel
-from pysc2_evolved.lib import stopwatch
-
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.env import enums, environment
+from pysc2_evolved.lib import actions as actions_lib
+from pysc2_evolved.lib import (
+    features,
+    metrics,
+    portspicker,
+    renderer_human,
+    run_parallel,
+    stopwatch,
+)
 
 sw = stopwatch.sw
 

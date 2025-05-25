@@ -16,8 +16,7 @@
 import numpy
 
 from pysc2_evolved.agents import base_agent
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
+from pysc2_evolved.lib import actions, features
 
 _PLAYER_SELF = features.PlayerRelative.SELF
 _PLAYER_NEUTRAL = features.PlayerRelative.NEUTRAL  # beacon/minerals
