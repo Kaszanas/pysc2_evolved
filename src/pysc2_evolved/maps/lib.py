@@ -52,7 +52,7 @@ class Map(object):
       path: Where to find the map file.
       directory: Directory for the map
       filename: Actual filename. You can skip the ".SC2Map" file ending.
-      download: Where to download the map.
+      download: Where the map can be downloaded from.
       game_steps_per_episode: Game steps per episode, independent of the step_mul.
           0 (default) means no limit.
       step_mul: How many game steps per agent step?
