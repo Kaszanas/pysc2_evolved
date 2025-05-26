@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Set
 
 import click
+from tqdm import tqdm
 
 from pysc2_evolved import run_configs
 from pysc2_evolved.lib.get_replay_version import get_replay_version
@@ -30,20 +31,19 @@ def read_replay_version(
     run_config: RunConfig,
 ) -> Version | None:
     """Query a replay for information."""
-    if replay_path.lower().endswith("sc2replay"):
-        data = run_config.replay_data(replay_path)
-        try:
-            version = get_replay_version(data)
-        except (ValueError, KeyError):
-            # Either corrupt or just old.
-            return None
-        except Exception as e:  # pylint: disable=broad-except
-            print("Invalid replay:", replay_path, e)
-        else:
-            return version
+    data = run_config.replay_data(replay_path)
+    try:
+        version = get_replay_version(data)
+    except (ValueError, KeyError):
+        # Either corrupt or just old.
+        return None
+    except Exception as e:  # pylint: disable=broad-except
+        print("Invalid replay:", replay_path, e)
+    else:
+        return version
 
 
-def replay_version_from_replay(replay_directory: Path) -> Set[Version]:
+def replay_versions_from_replay_directory(replay_directory: Path) -> Set[Version]:
     run_config = run_configs.get()
 
     # Use a set over the full version struct to catch cases where Blizzard failed
@@ -56,12 +56,17 @@ def replay_version_from_replay(replay_directory: Path) -> Set[Version]:
     list_of_replays = list(set_of_replays)
 
     try:
-        for replay_path in list_of_replays:
+        for replay_path in tqdm(
+            list_of_replays,
+            desc="Reading replay versions",
+            unit="replay",
+        ):
             version = read_replay_version(
                 replay_path=str(replay_path),
                 run_config=run_config,
             )
-            versions.add(version)
+            if version:
+                versions.add(version)
     except KeyboardInterrupt:
         pass
 
@@ -106,7 +111,9 @@ def save_versions_to_file(versions: Set[Version], output_file: Path) -> Path:
     help="File to write the version information to. If not provided, prints to stdout.",
 )
 def main(replay_directory: Path, output_file: Path | None):
-    replay_versions = get_replay_version(replay_directory=replay_directory)
+    replay_versions = replay_versions_from_replay_directory(
+        replay_directory=replay_directory
+    )
 
     if output_file:
         if not replay_versions:
