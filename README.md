@@ -19,14 +19,15 @@
   </a>
 </div>
 
+# Fork Notice
+
+This project is a fork of the original [PySC2](https://github.com/deepmind/pysc2). Community fork of the original PySC2 project, which seems to be no longer actively maintained. The goal of this project is to modernize PySC2 as PySC2_Evolved and to add new features and improvements over the original project. Please note that the changes may be heavily opinionated, but nonetheless, the aim is to support the original interfaces as closely as possible.
+
 # PySC2_Evolved - StarCraft II Learning Environment
 
 Originally created as [PySC2](https://github.com/deepmind/pysc2)
 by [DeepMind](http://deepmind.com) as a Python component of the StarCraft II
-Learning Environment (SC2LE). This is a community fork of the original PySC2 project,
-which seems to be no longer maintained. The goal of this project is to modernize PySC2 as
-PySC2_Evolved and to add new features and improvements to the original project.
-
+Learning Environment (SC2LE).
 
 It exposes [Blizzard Entertainment](http://blizzard.com)'s
 [StarCraft II Machine Learning API](https://github.com/Blizzard/s2client-proto) as a Python RL Environment.
