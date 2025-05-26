@@ -54,12 +54,6 @@ def version_dict(versions: List[Version]) -> Dict[str, Version]:
 VERSIONS = version_dict(
     [
         Version(
-            game_version="3.10.1", build_version=49716, data_version=None, binary=None
-        ),
-        Version(
-            game_version="3.12.0", build_version=51702, data_version=None, binary=None
-        ),
-        Version(
             game_version="3.13.0",
             build_version=52910,
             data_version="8D9FEF2E1CF7C6C9CBE4FBCA830DDE1C",
@@ -480,45 +474,9 @@ VERSIONS = version_dict(
             binary=None,
         ),
         Version(
-            game_version="5.0.10",
-            build_version=89165,
-            data_version="36A9F8C9AECF5C1D6CA261B3CD0DBA2D",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.11",
-            build_version=89720,
-            data_version="D371D4D7D1E6C131B24A09FC0E758547",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.11",
-            build_version=90136,
-            data_version="207F9DD45D02C9E6D19F868E0239E72D",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.12",
-            build_version=91115,
-            data_version="7857A76754FEB47C823D18993C476BF0",
-            binary=None,
-        ),
-        Version(
             game_version="5.0.13",
             build_version=92174,
             data_version="D44E66924A56B2D4BC94786D8A7EB5B8",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.13",
-            build_version=92440,
-            data_version="79F6D78E27ED069D2D84FB14288B88B9",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.14",
-            build_version=93272,
-            data_version="52920A9D89C7F63235945D10F3C73C64",
             binary=None,
         ),
     ]
