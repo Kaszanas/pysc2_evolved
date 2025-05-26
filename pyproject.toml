@@ -23,6 +23,7 @@ dependencies = [
     "s2clientprotocol>=5.0.14.93333.0",
     "s2protocol>=5.0.14.93333.0",
     "sk-video>=1.1.10",
+    "tqdm>=4.67.1",
     "websocket-client>=1.8.0",
 ]
 
