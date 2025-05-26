@@ -14,17 +14,22 @@
 # limitations under the License.
 """Print the list of defined maps."""
 
-from absl import app
+import click
 
 from pysc2_evolved import maps
 
 
-def main(unused_argv):
+def map_list():
     for _, map_class in sorted(maps.get_maps().items()):
         mp = map_class()
         if mp.path:
             print(mp, "\n")
 
 
+@click.command(help="List all available maps.")
+def main():
+    map_list()
+
+
 if __name__ == "__main__":
-    app.run(main)
+    main()
