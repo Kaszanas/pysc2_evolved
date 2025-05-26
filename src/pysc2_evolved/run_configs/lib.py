@@ -474,9 +474,27 @@ VERSIONS = version_dict(
             binary=None,
         ),
         Version(
+            game_version="5.0.11",
+            build_version=90136,
+            data_version="207F9DD45D02C9E6D19F868E0239E72D",
+            binary=None,
+        ),
+        Version(
+            game_version="5.0.12",
+            build_version=91115,
+            data_version="7857A76754FEB47C823D18993C476BF0",
+            binary=None,
+        ),
+        Version(
             game_version="5.0.13",
-            build_version=92174,
-            data_version="D44E66924A56B2D4BC94786D8A7EB5B8",
+            build_version=92440,
+            data_version="79F6D78E27ED069D2D84FB14288B88B9",
+            binary=None,
+        ),
+        Version(
+            game_version="5.0.14",
+            build_version=93272,
+            data_version="52920A9D89C7F63235945D10F3C73C64",
             binary=None,
         ),
     ]
