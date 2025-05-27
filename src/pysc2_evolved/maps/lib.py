@@ -75,7 +75,9 @@ class Map(object):
 
     @property
     def path(self):
-        """The full path to the map file: directory, filename and file ending."""
+        """
+        The full path to the map file: directory, filename and file ending.
+        """
         if self.filename:
             map_path = os.path.join(self.directory, self.filename)
             if not map_path.endswith(".SC2Map"):
@@ -83,7 +85,9 @@ class Map(object):
             return map_path
 
     def data(self, run_config: RunConfig):
-        """Return the map data."""
+        """
+        Return the map data.
+        """
         try:
             return run_config.map_data(self.path, self.players)
         except (IOError, OSError) as e:  # Catch both for python 2/3 compatibility.
@@ -117,21 +121,21 @@ class Map(object):
     @classmethod
     def all_subclasses(cls):
         """An iterator over all subclasses of `cls`."""
-        for s in cls.__subclasses__():
-            yield s
-            for c in s.all_subclasses():
-                yield c
+        for sub_class in cls.__subclasses__():
+            yield sub_class
+            for registered_class in sub_class.all_subclasses():
+                yield registered_class
 
 
 def get_maps() -> Dict[str, Map]:
     """Get the full dict of maps {map_name: map_class}."""
     maps = {}
-    for mp in Map.all_subclasses():
-        if mp.filename or mp.battle_net:
-            map_name = mp.__name__
+    for available_map in Map.all_subclasses():
+        if available_map.filename or available_map.battle_net:
+            map_name = available_map.__name__
             if map_name in maps:
                 raise DuplicateMapError("Duplicate map found: " + map_name)
-            maps[map_name] = mp
+            maps[map_name] = available_map
     return maps
 
 
