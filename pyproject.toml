@@ -40,6 +40,9 @@ extend-select = ["I"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysc2_evolved"]
 
+[tool.uv.sources]
+s2protocol = { git = "https://github.com/Kaszanas/s2protocol" }
+
 [project.scripts]
 pysc2_evolved_agent = "pysc2_evolved.bin.agent:main"
 pysc2_evolved_play = "pysc2_evolved.bin.play:entry_point"

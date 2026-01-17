@@ -549,7 +549,7 @@ requires-dist = [
     { name = "pygame", specifier = ">=2.6.1" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "s2clientprotocol", specifier = ">=5.0.15.95299.0" },
-    { name = "s2protocol", specifier = ">=5.0.15.95299.0" },
+    { name = "s2protocol", git = "https://github.com/Kaszanas/s2protocol" },
     { name = "sk-video", specifier = ">=1.1.10" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "websocket-client", specifier = ">=1.8.0" },
@@ -663,11 +663,10 @@ wheels = [
 [[package]]
 name = "s2protocol"
 version = "5.0.15.95299.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/Kaszanas/s2protocol#724d4d7f710ee54a26c3e82b7de5ac04012892af" }
 dependencies = [
     { name = "mpyq" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ce/c6/dfcf79bbf326320a5db993906c8308c42f38774b0e0f3ce92b832d94a623/s2protocol-5.0.15.95299.0.tar.gz", hash = "sha256:d448639bd8dc89a6c5940bcb4286577c6972bf88effe3dc4b08855e77ade3a78", size = 75791, upload-time = "2025-10-08T21:44:07.652Z" }
 
 [[package]]
 name = "scipy"
