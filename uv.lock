@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -548,8 +548,8 @@ requires-dist = [
     { name = "protobuf", specifier = "<=3.20.3" },
     { name = "pygame", specifier = ">=2.6.1" },
     { name = "requests", specifier = ">=2.32.3" },
-    { name = "s2clientprotocol", specifier = ">=5.0.14.93333.0" },
-    { name = "s2protocol", specifier = ">=5.0.14.93333.0" },
+    { name = "s2clientprotocol", specifier = ">=5.0.15.95299.0" },
+    { name = "s2protocol", specifier = ">=5.0.15.95299.0" },
     { name = "sk-video", specifier = ">=1.1.10" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "websocket-client", specifier = ">=1.8.0" },
@@ -651,23 +651,23 @@ wheels = [
 
 [[package]]
 name = "s2clientprotocol"
-version = "5.0.14.93333.0"
+version = "5.0.15.95299.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/11/33ab328601a07619448b3c1e1a49b886677766af0c9ad516fe5ff733624a/s2clientprotocol-5.0.14.93333.0-py2.py3-none-any.whl", hash = "sha256:f3d40aa76f78c51e0cad8efdb220910d4d0540fa00ed1b4cdfe7994f6ffa238d", size = 55607, upload-time = "2024-12-04T23:53:22.186Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/60/64512fc52b06e0601540e231139d3c07f597adc5751ec3914ff3e87fd27b/s2clientprotocol-5.0.15.95299.0-py2.py3-none-any.whl", hash = "sha256:f708b9f0641b7caf7f746c7c60889a2021f3ca10d5c81c490bc29d64183ace44", size = 55610, upload-time = "2025-10-08T21:44:19.083Z" },
 ]
 
 [[package]]
 name = "s2protocol"
-version = "5.0.14.93333.0"
+version = "5.0.15.95299.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mpyq" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/03/75/628624f912cbb758719531f138a0afc584b4bb34dff8c0a0131c7d834c44/s2protocol-5.0.14.93333.0.tar.gz", hash = "sha256:37b5cd9933762f9cd0315778f2d75c978f441f3b1c507763a1c859422a3b07f0", size = 75191, upload-time = "2024-12-04T23:53:03.192Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/c6/dfcf79bbf326320a5db993906c8308c42f38774b0e0f3ce92b832d94a623/s2protocol-5.0.15.95299.0.tar.gz", hash = "sha256:d448639bd8dc89a6c5940bcb4286577c6972bf88effe3dc4b08855e77ade3a78", size = 75791, upload-time = "2025-10-08T21:44:07.652Z" }
 
 [[package]]
 name = "scipy"
