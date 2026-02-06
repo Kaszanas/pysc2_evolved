@@ -804,7 +804,7 @@ wheels = [
 [[package]]
 name = "s2protocol"
 version = "5.0.15.95299.0"
-source = { git = "https://github.com/Kaszanas/s2protocol#9ec2d313bb65cc0c806d4d8510b7a671b287376b" }
+source = { git = "https://github.com/Kaszanas/s2protocol#8a5ef5b11e01c33a66262bfee53878bbb63192eb" }
 dependencies = [
     { name = "mpyq" },
 ]
