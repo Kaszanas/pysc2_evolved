@@ -19,6 +19,7 @@ dependencies = [
     "portpicker>=1.6.0",
     "protobuf<=3.20.3",
     "pygame>=2.6.1",
+    "python-dotenv>=1.2.1",
     "requests>=2.32.3",
     "s2clientprotocol>=5.0.15.95299.0",
     "s2protocol>=5.0.15.95299.0",
