@@ -479,18 +479,22 @@ VERSIONS = version_dict(
             data_version="207F9DD45D02C9E6D19F868E0239E72D",
             binary=None,
         ),
-        Version(
-            game_version="5.0.12",
-            build_version=91115,
-            data_version="7857A76754FEB47C823D18993C476BF0",
-            binary=None,
-        ),
-        Version(
-            game_version="5.0.13",
-            build_version=92440,
-            data_version="79F6D78E27ED069D2D84FB14288B88B9",
-            binary=None,
-        ),
+        # REVIEW: This game engine version is missing from the CASC Viewer:
+        # Version(
+        #     game_version="5.0.12",
+        #     build_version=91115,
+        #     data_version="7857A76754FEB47C823D18993C476BF0",
+        #     binary=None,
+        # ),
+        # REVIEW: This game engine version is missing from the CASC Viewer:
+        # REVIEW: Blizzard botched their update system, these game versions
+        # REVIEW: were removed from local storage.
+        # Version(
+        #     game_version="5.0.13",
+        #     build_version=92440,
+        #     data_version="79F6D78E27ED069D2D84FB14288B88B9",
+        #     binary=None,
+        # ),
         Version(
             game_version="5.0.14",
             build_version=93272,
