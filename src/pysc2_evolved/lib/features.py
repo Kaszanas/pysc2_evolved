@@ -21,6 +21,7 @@ import numpy as np
 from absl import logging
 from s2clientprotocol import raw_pb2 as sc_raw
 from s2clientprotocol import sc2api_pb2 as sc_pb
+from s2clientprotocol import score_pb2 as sc_score
 
 from pysc2_evolved.lib import (
     actions,
@@ -47,6 +48,7 @@ from pysc2_evolved.lib.features_types import (
     UnitCounts,
     UnitLayer,
 )
+from pysc2_evolved.lib.message_wrapper import MessageWrapper
 
 sw = stopwatch.sw
 
@@ -349,23 +351,23 @@ class AgentInterfaceFormat(object):
         raw_resolution=None,
         action_space=None,
         camera_width_world_units=None,
-        use_feature_units=False,
-        use_raw_units=False,
-        use_raw_actions=False,
-        max_raw_actions=512,
-        max_selected_units=30,
-        use_unit_counts=False,
-        use_camera_position=False,
-        show_cloaked=False,
-        show_burrowed_shadows=False,
-        show_placeholders=False,
-        hide_specific_actions=True,
+        use_feature_units: bool = False,
+        use_raw_units: bool = False,
+        use_raw_actions: bool = False,
+        max_raw_actions: int = 512,
+        max_selected_units: int = 30,
+        use_unit_counts: bool = False,
+        use_camera_position: bool = False,
+        show_cloaked: bool = False,
+        show_burrowed_shadows: bool = False,
+        show_placeholders: bool = False,
+        hide_specific_actions: bool = True,
         action_delay_fn=None,
-        send_observation_proto=False,
-        crop_to_playable_area=False,
-        raw_crop_to_playable_area=False,
-        allow_cheating_layers=False,
-        add_cargo_to_units=False,
+        send_observation_proto: bool = False,
+        crop_to_playable_area: bool = False,
+        raw_crop_to_playable_area: bool = False,
+        allow_cheating_layers: bool = False,
+        add_cargo_to_units: bool = False,
     ):
         """Initializer.
 
@@ -619,8 +621,8 @@ def parse_agent_interface_format(
     feature_minimap=None,
     rgb_screen=None,
     rgb_minimap=None,
-    action_space=None,
-    action_delays=None,
+    action_space: str | None = None,
+    action_delays: list[int] | None = None,
     **kwargs,
 ):
     """Creates an AgentInterfaceFormat object from keyword args.
@@ -690,7 +692,10 @@ def parse_agent_interface_format(
 
 
 def features_from_game_info(
-    game_info, agent_interface_format=None, map_name=None, **kwargs
+    game_info: sc_pb.ResponseGameInfo,
+    agent_interface_format: AgentInterfaceFormat | None = None,
+    map_name: str | None = None,
+    **kwargs,
 ):
     """Construct a Features object using data extracted from game info.
 
@@ -1070,7 +1075,9 @@ class Features(object):
         return self._requested_races
 
     @sw.decorate
-    def transform_obs(self, obs):
+    def transform_obs(
+        self, obs: sc_pb.ResponseObservation | MessageWrapper
+    ) -> named_array.NamedDict:
         """Render some SC2 observations into something an agent can handle."""
         empty_unit = np.array([], dtype=np.int32).reshape((0, len(UnitLayer)))
         out = named_array.NamedDict(
@@ -1090,7 +1097,7 @@ class Features(object):
             }
         )
 
-        def or_zeros(layer, size):
+        def or_zeros(layer: np.ndarray | None, size: point.Point) -> np.ndarray:
             if layer is not None:
                 return layer.astype(np.int32, copy=False)
             else:
@@ -1104,9 +1111,10 @@ class Features(object):
                     np.stack(
                         [
                             or_zeros(
-                                f.unpack(obs.observation), aif.feature_dimensions.screen
+                                screen_feature.unpack(obs.observation),
+                                aif.feature_dimensions.screen,
                             )
-                            for f in SCREEN_FEATURES
+                            for screen_feature in SCREEN_FEATURES
                         ]
                     ),
                     names=[ScreenFeatures, None, None],
@@ -1172,7 +1180,11 @@ class Features(object):
                 dtype=np.int32,
             )
 
-            def get_score_details(key, details, categories):
+            def get_score_details(
+                key: ScoreByCategory | ScoreByVital,
+                details: sc_score.ScoreDetails | MessageWrapper,
+                categories: list,
+            ) -> list:
                 row = getattr(details, key.name)
                 return [getattr(row, category.name) for category in categories]
 
@@ -1213,7 +1225,7 @@ class Features(object):
             dtype=np.int32,
         )
 
-        def unit_vec(u):
+        def unit_vec(u: sc_raw.Unit) -> np.ndarray:
             return np.array(
                 (
                     u.unit_type,
@@ -1275,18 +1287,20 @@ class Features(object):
 
         tag_types = {}  # Only populate the cache if it's needed.
 
-        def get_addon_type(tag):
+        def get_addon_type(tag: int) -> int:
             if not tag_types:
                 for u in raw.units:
                     tag_types[u.tag] = u.unit_type
             return tag_types.get(tag, 0)
 
-        def full_unit_vec(u, pos_transform, is_raw=False):
+        def full_unit_vec(
+            u: sc_raw.Unit, pos_transform: transform.Chain, is_raw: bool = False
+        ) -> list:
             """Compute unit features."""
             screen_pos = pos_transform.fwd_pt(point.Point.build(u.pos))
             screen_radius = pos_transform.fwd_dist(u.radius)
 
-            def raw_order(i):
+            def raw_order(i) -> int:
                 if len(u.orders) > i:
                     # TODO(tewalds): Return a generalized func id.
                     return actions.RAW_ABILITY_ID_TO_FUNC_ID.get(
@@ -1425,7 +1439,9 @@ class Features(object):
 
         out["upgrades"] = np.array(raw.player.upgrade_ids, dtype=np.int32)
 
-        def cargo_units(u, pos_transform, is_raw=False):
+        def cargo_units(
+            u: sc_raw.Unit, pos_transform: transform.Chain, is_raw: bool = False
+        ) -> list[list]:
             """Compute unit features."""
             screen_pos = pos_transform.fwd_pt(point.Point.build(u.pos))
             features = []
@@ -1563,7 +1579,7 @@ class Features(object):
 
         if aif.use_feature_units or aif.use_raw_units:
 
-            def transform_radar(radar):
+            def transform_radar(radar: sc_raw.Radar) -> tuple[int, int, int]:
                 p = self._world_to_minimap_px.fwd_pt(point.Point.build(radar.pos))
                 return p.x, p.y, radar.radius
 
@@ -1580,8 +1596,26 @@ class Features(object):
         return out
 
     @sw.decorate
-    def available_actions(self, obs):
-        """Return the list of available action ids."""
+    def available_actions(self, obs: sc_pb.Observation) -> list[int]:
+        """
+        Return the list of available action ids.
+
+        Parameters
+        ----------
+        obs : sc_pb.Observation
+            Observation for which available actions will be listed.
+
+        Returns
+        -------
+        list[int]
+            List of available action ids.
+
+        Raises
+        ------
+        ValueError
+            If an ability in the observation doesn't have a corresponding action.
+        """
+
         available_actions = set()
         hide_specific_actions = self._agent_interface_format.hide_specific_actions
         for i, func in actions.FUNCTIONS_AVAILABLE.items():
@@ -1610,7 +1644,12 @@ class Features(object):
         return list(available_actions)
 
     @sw.decorate
-    def transform_action(self, obs, func_call, skip_available=False):
+    def transform_action(
+        self,
+        obs: sc_pb.Observation,
+        func_call: actions.FunctionCall,
+        skip_available: bool = False,
+    ) -> sc_pb.Action:
         """Transform an agent-style action to one that SC2 can consume.
 
         Args:
@@ -1724,20 +1763,30 @@ class Features(object):
         return sc2_action
 
     @sw.decorate
-    def reverse_action(self, action):
-        """Transform an SC2-style action into an agent-style action.
-
+    def reverse_action(self, action: sc_pb.Action) -> actions.FunctionCall:
+        """
+        Transform an SC2-style action into an agent-style action.
         This should be the inverse of `transform_action`.
 
-        Args:
-          action: a `sc_pb.Action` to be transformed.
 
-        Returns:
-          A corresponding `actions.FunctionCall`.
+        Parameters
+        ----------
+        action : sc_pb.Action
+            The SC2-style action to transform.
 
-        Raises:
-          ValueError: if it doesn't know how to transform this action.
+        Returns
+        -------
+        actions.FunctionCall
+            The corresponding agent-style function call.
+
+        Raises
+        ------
+        ValueError
+            If the action is not recognized or cannot be transformed.
+        ValueError
+            If the action is not recognized or cannot be transformed.
         """
+
         FUNCTIONS = actions.FUNCTIONS  # pylint: disable=invalid-name
 
         aif = self._agent_interface_format
@@ -1835,21 +1884,33 @@ class Features(object):
         return FUNCTIONS.no_op()
 
     @sw.decorate
-    def reverse_raw_action(self, action, prev_obs):
-        """Transform an SC2-style action into an agent-style action.
-
+    def reverse_raw_action(
+        self, action: sc_pb.Action, prev_obs: sc_pb.Observation
+    ) -> actions.FunctionCall:
+        """
+        Transform an SC2-style action into an agent-style action.
         This should be the inverse of `transform_action`.
 
-        Args:
-          action: a `sc_pb.Action` to be transformed.
-          prev_obs: an obs to figure out tags.
+        Parameters
+        ----------
+        action : sc_pb.Action
+            The SC2-style action to transform.
+        prev_obs : sc_pb.Observation
+            The previous observation, used to figure out tags for raw actions.
 
-        Returns:
-          A corresponding `actions.FunctionCall`.
+        Returns
+        -------
+        actions.FunctionCall
+            The corresponding agent-style function call.
 
-        Raises:
-          ValueError: if it doesn't know how to transform this action.
+        Raises
+        ------
+        ValueError
+            If the action is not recognized or cannot be transformed.
+        ValueError
+            If the action is not recognized or cannot be transformed.
         """
+
         aif = self._agent_interface_format
         raw_tags = prev_obs["raw_units"][:, FeatureUnit.tag]
 
