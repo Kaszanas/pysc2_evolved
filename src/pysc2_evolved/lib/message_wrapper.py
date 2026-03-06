@@ -1,5 +1,6 @@
 class MessageWrapper:
-    """Wraps a dict to allow protobuf-style dot-notation attribute access.
+    """
+    Wraps a dict to allow protobuf-style dot-notation attribute access.
 
     Nested dicts are recursively wrapped, so `obj.a.b.c` works when the
     underlying data is `{"a": {"b": {"c": value}}}`.
@@ -56,7 +57,7 @@ class MessageWrapper:
             return self._data == other
         return NotImplemented
 
-    # --- dict-like helpers ---------------------------------------------------
+    # Dict-like methods:
     def get(self, key, default=None):
         value = self._data.get(key, default)
         return self._wrap(value) if value is not default else default
@@ -73,7 +74,7 @@ class MessageWrapper:
     def __getitem__(self, key):
         return self._wrap(self._data[key])
 
-    # --- protobuf compatibility ----------------------------------------------
+    # Protobuf compatibility methods:
     def HasField(self, name):  # noqa: N802 – matches protobuf API
         """Return True if *name* is present and is not None."""
         return name in self._data and self._data[name] is not None
