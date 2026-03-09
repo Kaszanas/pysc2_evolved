@@ -74,6 +74,12 @@ class MessageWrapper:
     def __getitem__(self, key):
         return self._wrap(self._data[key])
 
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def __setattr__(self, name, value):
+        self._data[name] = value
+
     # Protobuf compatibility methods:
     def HasField(self, name):  # noqa: N802 – matches protobuf API
         """Return True if *name* is present and is not None."""
@@ -82,3 +88,25 @@ class MessageWrapper:
     def ListFields(self):  # noqa: N802
         """Yield (name, wrapped_value) pairs for every populated field."""
         return [(k, self._wrap(v)) for k, v in self._data.items() if v is not None]
+
+
+if __name__ == "__main__":
+    # Example usage:
+    data = {
+        "a": 1,
+        "b": {"c": 2, "d": [3, {"e": 4}]},
+        "f": None,
+    }
+    wrapper = MessageWrapper(data)
+    print(wrapper.a)  # 1
+    print(wrapper.b.c)  # 2
+    print(wrapper.b.d[0])  # 3
+    print(wrapper.b.d[1].e)  # 4
+    print(wrapper.HasField("f"))  # False
+    print(wrapper.HasField("a"))  # True
+    print(
+        wrapper.ListFields()
+    )  # [('a', 1), ('b', MessageWrapper({'c': 2, 'd': [3, {'e': 4}]}))]
+
+    wrapper.z = 5
+    print(wrapper.z)  # 5
