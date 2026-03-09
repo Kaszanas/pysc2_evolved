@@ -32,6 +32,7 @@ from pysc2_evolved.lib import (
     stopwatch,
     transform,
 )
+from pysc2_evolved.lib.actions import ActionSpace
 from pysc2_evolved.lib.features_types import (
     EffectPos,
     FeatureType,
@@ -349,7 +350,7 @@ class AgentInterfaceFormat(object):
         feature_dimensions=None,
         rgb_dimensions=None,
         raw_resolution=None,
-        action_space=None,
+        action_space: ActionSpace = None,
         camera_width_world_units=None,
         use_feature_units: bool = False,
         use_raw_units: bool = False,
@@ -383,7 +384,7 @@ class AgentInterfaceFormat(object):
         raw_resolution : _type_, optional
             Discretize the `raw_units` observation's x,y to this
             resolution. Default is the map_size., by default None
-        action_space : _type_, optional
+        action_space : ActionSpace, optional
             If you pass both feature and rgb sizes, then you must also
             specify which you want to use for your actions as an ActionSpace enum., by default None
         camera_width_world_units : _type_, optional
@@ -566,7 +567,7 @@ class AgentInterfaceFormat(object):
                         action_space, feature_dimensions, rgb_dimensions
                     )
                 )
-            return
+            return action_space, use_raw_actions
 
         # Action space was not set by the user, infer it from the other parameters:
         if use_raw_actions:
