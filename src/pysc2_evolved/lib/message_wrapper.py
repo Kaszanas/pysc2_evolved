@@ -85,6 +85,10 @@ class MessageWrapper:
     def __setattr__(self, name, value):
         self._data[name] = value
 
+    def to_dict(self):
+        """Return the raw underlying dict."""
+        return self._data
+
     # Protobuf compatibility methods:
     def HasField(self, name):  # noqa: N802 – matches protobuf API
         """Return True if *name* is present and is not None."""
@@ -223,6 +227,10 @@ class MessageWrapperDescriptorAware:
 
     def __setattr__(self, name, value):
         self._data[name] = value
+
+    def to_dict(self):
+        """Return the raw underlying dict."""
+        return self._data
 
     # Protobuf compatibility methods:
     def HasField(self, name):  # noqa: N802 – matches protobuf API
