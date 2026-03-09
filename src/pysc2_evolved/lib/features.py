@@ -369,127 +369,144 @@ class AgentInterfaceFormat(object):
         allow_cheating_layers: bool = False,
         add_cargo_to_units: bool = False,
     ):
-        """Initializer.
+        """
+        Initializes Agent Interface Format.
 
-        Args:
-          feature_dimensions: Feature layer `Dimension`s. Either this or
-              rgb_dimensions (or both) must be set.
-          rgb_dimensions: RGB `Dimension`. Either this or feature_dimensions
-              (or both) must be set.
-          raw_resolution: Discretize the `raw_units` observation's x,y to this
-              resolution. Default is the map_size.
-          action_space: If you pass both feature and rgb sizes, then you must also
-              specify which you want to use for your actions as an ActionSpace enum.
-          camera_width_world_units: The width of your screen in world units. If your
+        Parameters
+        ----------
+        feature_dimensions : _type_, optional
+            Feature layer `Dimension`s. Either this or
+            rgb_dimensions (or both) must be set., by default None
+        rgb_dimensions : _type_, optional
+            RGB `Dimension`. Either this or feature_dimensions
+            (or both) must be set., by default None
+        raw_resolution : _type_, optional
+            Discretize the `raw_units` observation's x,y to this
+            resolution. Default is the map_size., by default None
+        action_space : _type_, optional
+            If you pass both feature and rgb sizes, then you must also
+            specify which you want to use for your actions as an ActionSpace enum., by default None
+        camera_width_world_units : _type_, optional
+            The width of your screen in world units. If your
               feature_dimensions.screen=(64, 48) and camera_width is 24, then each
               px represents 24 / 64 = 0.375 world units in each of x and y.
               It'll then represent a camera of size (24, 0.375 * 48) = (24, 18)
-              world units.
-          use_feature_units: Whether to include feature_unit observations.
-          use_raw_units: Whether to include raw unit data in observations. This
-              differs from feature_units because it includes units outside the
-              screen and hidden units, and because unit positions are given in
-              terms of world units instead of screen units.
-          use_raw_actions: [bool] Whether to use raw actions as the interface.
-              Same as specifying action_space=ActionSpace.RAW.
-          max_raw_actions: [int] Maximum number of raw actions
-          max_selected_units: [int] The maximum number of selected units in the
-              raw interface.
-          use_unit_counts: Whether to include unit_counts observation. Disabled by
-              default since it gives information outside the visible area.
-          use_camera_position: Whether to include the camera's position (in minimap
-              coordinates) in the observations.
-          show_cloaked: Whether to show limited information for cloaked units.
-          show_burrowed_shadows: Whether to show limited information for burrowed
-              units that leave a shadow on the ground (ie widow mines and moving
-              roaches and infestors).
-          show_placeholders: Whether to show buildings that are queued for
-              construction.
-          hide_specific_actions: [bool] Some actions (eg cancel) have many
-              specific versions (cancel this building, cancel that spell) and can
-              be represented in a more general form. If a specific action is
-              available, the general will also be available. If you set
-              `hide_specific_actions` to False, the specific versions will also be
-              available, but if it's True, the specific ones will be hidden.
-              Similarly, when transforming back, a specific action will be returned
-              as the general action. This simplifies the action space, though can
-              lead to some actions in replays not being exactly representable using
-              only the general actions.
-          action_delay_fn: A callable which when invoked returns a delay in game
-              loops to apply to a requested action. Defaults to None, meaning no
-              delays are added (actions will be executed on the next game loop,
-              hence with the minimum delay of 1).
-          send_observation_proto: Whether or not to send the raw observation
-              response proto in the observations.
-          crop_to_playable_area: Crop the feature layer minimap observations down
-              from the full map area to just the playable area. Also improves the
-              heightmap rendering.
-          raw_crop_to_playable_area: Crop the raw units to the playable area. This
-              means units will show up closer to the origin with less dead space
-              around their valid locations.
-          allow_cheating_layers: Show the unit types and potentially other cheating
-              layers on the minimap.
-          add_cargo_to_units: Whether to add the units that are currently in cargo
-              to the feature_units and raw_units lists.
+              world units., by default None
+        use_feature_units : bool, optional
+            Whether to include feature_unit observations., by default False
+        use_raw_units : bool, optional
+            Whether to include raw unit data in observations. This
+            differs from feature_units because it includes units outside the
+            screen and hidden units, and because unit positions are given in
+            terms of world units instead of screen units., by default False
+        use_raw_actions : bool, optional
+            Whether to use raw actions as the interface.
+            Same as specifying action_space=ActionSpace.RAW., by default False
+        max_raw_actions : int, optional
+            Maximum number of raw actions, by default 512
+        max_selected_units : int, optional
+            The maximum number of selected units in the
+            raw interface., by default 30
+        use_unit_counts : bool, optional
+            Whether to include unit_counts observation. Disabled by
+              default since it gives information outside the visible area., by default False
+        use_camera_position : bool, optional
+            Whether to include the camera's position (in minimap
+            coordinates) in the observations., by default False
+        show_cloaked : bool, optional
+            Whether to show limited information for cloaked units., by default False
+        show_burrowed_shadows : bool, optional
+            Whether to show limited information for burrowed
+            units that leave a shadow on the ground (ie widow mines and moving
+            roaches and infestors)., by default False
+        show_placeholders : bool, optional
+            Whether to show buildings that are queued for
+            construction., by default False
+        hide_specific_actions : bool, optional
+            Some actions (eg cancel) have many
+            specific versions (cancel this building, cancel that spell) and can
+            be represented in a more general form. If a specific action is
+            available, the general will also be available. If you set
+            `hide_specific_actions` to False, the specific versions will also be
+            available, but if it's True, the specific ones will be hidden.
+            Similarly, when transforming back, a specific action will be returned
+            as the general action. This simplifies the action space, though can
+            lead to some actions in replays not being exactly representable using
+            only the general actions., by default True
+        action_delay_fn : _type_, optional
+            A callable which when invoked returns a delay in game
+            loops to apply to a requested action. Defaults to None, meaning no
+            delays are added (actions will be executed on the next game loop,
+            hence with the minimum delay of 1)., by default None
+        send_observation_proto : bool, optional
+            Whether or not to send the raw observation
+            response proto in the observations., by default False
+        crop_to_playable_area : bool, optional
+            Crop the feature layer minimap observations down
+            from the full map area to just the playable area. Also improves the
+            heightmap rendering., by default False
+        raw_crop_to_playable_area : bool, optional
+            Crop the raw units to the playable area. This
+            means units will show up closer to the origin with less dead space
+            around their valid locations., by default False
+        allow_cheating_layers : bool, optional
+            Show the unit types and potentially other cheating
+            layers on the minimap., by default False
+        add_cargo_to_units : bool, optional
+            Whether to add the units that are currently in cargo
+            to the feature_units and raw_units lists., by default False
 
-        Raises:
-          ValueError: if the parameters are inconsistent.
+        Raises
+        ------
+        ValueError
+            If neither feature_dimensions, rgb_dimensions nor use_raw_units are set.
+        ValueError
+            If action_space is specified but not of type ActionSpace.
+        ValueError
+            If action_space is specified as FEATURES but feature_dimensions isn't set, or
+            if action_space is specified as RGB but rgb_dimensions isn't set.
+        ValueError
+            When no action_space is specified and feature_dimensions and rgb_dimensions are both set,
+            since then it's ambiguous which action space to use.
+        ValueError
+            If use_raw_actions is True but use_raw_units isn't True,
+            since raw actions don't make sense without raw units.
+        ValueError
+            If use_raw_actions is True but action_space is different from RAW,
+            since then the action space and use_raw_actions are inconsistent.
+        ValueError
+            If rgb_dimensions are specified and the screen dimensions are smaller than the minimap dimensions,
+            since then the screen can't fit the minimap.
         """
 
-        if not (feature_dimensions or rgb_dimensions or use_raw_units):
-            raise ValueError(
-                "Must set either the feature layer or rgb dimensions, or use raw units."
-            )
+        # REVIEW: All of the checks below are convoluted, and not clearly
+        # REVIEW: interpretable, this should be adjusted, a separate function/method
+        # REVIEW: should be defined for these.
 
-        if action_space:
-            if not isinstance(action_space, actions.ActionSpace):
-                raise ValueError("action_space must be of type ActionSpace.")
+        self._check_feature_dimensions(
+            feature_dimensions=feature_dimensions,
+            rgb_dimensions=rgb_dimensions,
+            use_raw_units=use_raw_units,
+        )
 
-            if action_space == actions.ActionSpace.RAW:
-                use_raw_actions = True
-            elif (
-                action_space == actions.ActionSpace.FEATURES and not feature_dimensions
-            ) or (action_space == actions.ActionSpace.RGB and not rgb_dimensions):
-                raise ValueError(
-                    "Action space must match the observations, action space={}, "
-                    "feature_dimensions={}, rgb_dimensions={}".format(
-                        action_space, feature_dimensions, rgb_dimensions
-                    )
-                )
-        else:
-            if use_raw_actions:
-                action_space = actions.ActionSpace.RAW
-            elif feature_dimensions and rgb_dimensions:
-                raise ValueError(
-                    "You must specify the action space if you have both screen and "
-                    "rgb observations."
-                )
-            elif feature_dimensions:
-                action_space = actions.ActionSpace.FEATURES
-            else:
-                action_space = actions.ActionSpace.RGB
+        action_space, use_raw_actions = self._check_action_space(
+            action_space=action_space,
+            feature_dimensions=feature_dimensions,
+            rgb_dimensions=rgb_dimensions,
+            use_raw_actions=use_raw_actions,
+        )
 
         if raw_resolution:
             raw_resolution = _to_point(raw_resolution)
 
         if use_raw_actions:
-            if not use_raw_units:
-                raise ValueError(
-                    "You must set use_raw_units if you intend to use_raw_actions"
-                )
-            if action_space != actions.ActionSpace.RAW:
-                raise ValueError(
-                    "Don't specify both an action_space and use_raw_actions."
-                )
-
-        if rgb_dimensions and (
-            rgb_dimensions.screen.x < rgb_dimensions.minimap.x
-            or rgb_dimensions.screen.y < rgb_dimensions.minimap.y
-        ):
-            raise ValueError(
-                "RGB Screen (%s) can't be smaller than the minimap (%s)."
-                % (rgb_dimensions.screen, rgb_dimensions.minimap)
+            self._check_use_raw_actions(
+                use_raw_units=use_raw_units,
+                action_space=action_space,
             )
+
+        if rgb_dimensions:
+            self._check_rgb_dimensions(rgb_dimensions=rgb_dimensions)
 
         self._feature_dimensions = feature_dimensions
         self._rgb_dimensions = rgb_dimensions
@@ -518,6 +535,82 @@ class AgentInterfaceFormat(object):
             self._action_dimensions = feature_dimensions
         else:
             self._action_dimensions = rgb_dimensions
+
+    @staticmethod
+    def _check_feature_dimensions(feature_dimensions, rgb_dimensions, use_raw_units):
+        if not (feature_dimensions or rgb_dimensions or use_raw_units):
+            raise ValueError(
+                "Must set either the feature layer or rgb dimensions, or use raw units."
+            )
+
+    @staticmethod
+    def _check_action_space(
+        action_space,
+        feature_dimensions,
+        rgb_dimensions,
+        use_raw_actions: bool,
+    ):
+        # The action space was set by the user:
+        if action_space:
+            if not isinstance(action_space, actions.ActionSpace):
+                raise ValueError("action_space must be of type ActionSpace.")
+
+            if action_space == actions.ActionSpace.RAW:
+                use_raw_actions = True
+            elif (
+                action_space == actions.ActionSpace.FEATURES and not feature_dimensions
+            ) or (action_space == actions.ActionSpace.RGB and not rgb_dimensions):
+                raise ValueError(
+                    "Action space must match the observations, action space={}, "
+                    "feature_dimensions={}, rgb_dimensions={}".format(
+                        action_space, feature_dimensions, rgb_dimensions
+                    )
+                )
+            return
+
+        # Action space was not set by the user, infer it from the other parameters:
+        if use_raw_actions:
+            action_space = actions.ActionSpace.RAW
+            return action_space, use_raw_actions
+
+        # If both feature and rgb dimensions are set, then it's ambiguous which action space to use,
+        # so require the user to specify it.
+        if feature_dimensions and rgb_dimensions:
+            raise ValueError(
+                "You must specify the action space if you have both screen and "
+                "rgb observations."
+            )
+
+        # If only one of feature and rgb dimensions is set, then use the corresponding action space.
+        if feature_dimensions:
+            action_space = actions.ActionSpace.FEATURES
+            return action_space, use_raw_actions
+
+        # If we get here, then rgb_dimensions is set but feature_dimensions isn't,
+        # so use the rgb action space.
+        action_space = actions.ActionSpace.RGB
+
+        return action_space, use_raw_actions
+
+    @staticmethod
+    def _check_use_raw_actions(use_raw_units, action_space):
+        if not use_raw_units:
+            raise ValueError(
+                "You must set use_raw_units if you intend to use_raw_actions"
+            )
+        if action_space != actions.ActionSpace.RAW:
+            raise ValueError("Don't specify both an action_space and use_raw_actions.")
+
+    @staticmethod
+    def _check_rgb_dimensions(rgb_dimensions):
+        if (
+            rgb_dimensions.screen.x < rgb_dimensions.minimap.x
+            or rgb_dimensions.screen.y < rgb_dimensions.minimap.y
+        ):
+            raise ValueError(
+                "RGB Screen (%s) can't be smaller than the minimap (%s)."
+                % (rgb_dimensions.screen, rgb_dimensions.minimap)
+            )
 
     @property
     def feature_dimensions(self):
