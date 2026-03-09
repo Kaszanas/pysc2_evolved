@@ -148,7 +148,9 @@ class MessageWrapperDescriptorAware:
         if fd.label == FieldDescriptor.LABEL_REPEATED:
             return []
         if fd.type == FieldDescriptor.TYPE_MESSAGE:
-            return MessageWrapper({}, proto_type=fd.message_type._concrete_class)
+            return MessageWrapperDescriptorAware(
+                {}, proto_type=fd.message_type._concrete_class
+            )
         # Scalar: fd.default_value already gives 0 / "" / False / etc.
         return fd.default_value
 
@@ -158,14 +160,16 @@ class MessageWrapperDescriptorAware:
     def _wrap_value(value, proto_type=None):
         """Wrap *value*, optionally propagating *proto_type* for dicts."""
         if isinstance(value, dict):
-            return MessageWrapper(value, proto_type=proto_type)
+            return MessageWrapperDescriptorAware(value, proto_type=proto_type)
         if isinstance(value, list):
-            return [MessageWrapper._wrap_value(v, proto_type) for v in value]
+            return [
+                MessageWrapperDescriptorAware._wrap_value(v, proto_type) for v in value
+            ]
         return value
 
     def _wrap(self, value, field_name=None):
         """Wrap *value*, resolving the nested proto type from *field_name*."""
-        return MessageWrapper._wrap_value(
+        return MessageWrapperDescriptorAware._wrap_value(
             value, self._nested_proto(field_name) if field_name else None
         )
 
@@ -199,7 +203,7 @@ class MessageWrapperDescriptorAware:
         return f"{type(self).__name__}({self._data!r})"
 
     def __eq__(self, other):
-        if isinstance(other, MessageWrapper):
+        if isinstance(other, MessageWrapperDescriptorAware):
             return self._data == other._data
         if isinstance(other, dict):
             return self._data == other
