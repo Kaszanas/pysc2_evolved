@@ -143,6 +143,16 @@ class MessageWrapperDescriptorAware:
             return fd.message_type._concrete_class
         return None
 
+    def _resolve_enum(self, name, value):
+        """If *name* is an enum field and *value* is a string, return the int."""
+        if not isinstance(value, str):
+            return value
+        fd = self._field_descriptor(name)
+        if fd is None or fd.type != FieldDescriptor.TYPE_ENUM:
+            return value
+        ev = fd.enum_type.values_by_name.get(value)
+        return ev.number if ev is not None else value
+
     def _default_for_field(self, fd):
         """Return the proto-defined default for *fd*."""
         if fd.label == FieldDescriptor.LABEL_REPEATED:
@@ -168,7 +178,13 @@ class MessageWrapperDescriptorAware:
         return value
 
     def _wrap(self, value, field_name=None):
-        """Wrap *value*, resolving the nested proto type from *field_name*."""
+        """Wrap *value*, resolving the nested proto type from *field_name*.
+
+        Enum string values (produced by ``MessageToDict``) are automatically
+        converted back to their integer representation.
+        """
+        if field_name:
+            value = self._resolve_enum(field_name, value)
         return MessageWrapperDescriptorAware._wrap_value(
             value, self._nested_proto(field_name) if field_name else None
         )
