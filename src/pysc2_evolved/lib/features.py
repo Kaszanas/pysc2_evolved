@@ -1388,7 +1388,9 @@ class Features(object):
             return tag_types.get(tag, 0)
 
         def full_unit_vec(
-            u: sc_raw.Unit, pos_transform: transform.Chain, is_raw: bool = False
+            u: sc_raw.Unit,
+            pos_transform: transform.Chain,
+            is_raw: bool = False,
         ) -> list:
             """Compute unit features."""
             screen_pos = pos_transform.fwd_pt(point.Point.build(u.pos))
@@ -1401,6 +1403,9 @@ class Features(object):
                         u.orders[i].ability_id, 0
                     )
                 return 0
+
+            # REVIEW: Alliance is an enum in proto. MessageWrapper
+            # REVIEW: uses the string value instead of the raw int as expected.
 
             features = [
                 # Match unit_vec order
@@ -1673,7 +1678,7 @@ class Features(object):
 
         if aif.use_feature_units or aif.use_raw_units:
 
-            def transform_radar(radar: sc_raw.Radar) -> tuple[int, int, int]:
+            def transform_radar(radar) -> tuple[int, int, int]:
                 p = self._world_to_minimap_px.fwd_pt(point.Point.build(radar.pos))
                 return p.x, p.y, radar.radius
 
