@@ -14,6 +14,8 @@
 """Render feature layers from SC2 Observation protos into numpy arrays."""
 # pylint: disable=g-complex-comprehension
 
+from __future__ import annotations
+
 import collections
 import random
 
@@ -790,7 +792,7 @@ def features_from_game_info(
     agent_interface_format: AgentInterfaceFormat | None = None,
     map_name: str | None = None,
     **kwargs,
-):
+) -> Features:
     """Construct a Features object using data extracted from game info.
 
     Args:
