@@ -6,7 +6,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-merge-conflict
       - id: check-yaml
-        args: [ --unsafe ]
+        args: [--unsafe]
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.4.1
     hooks:
@@ -18,15 +18,18 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format
 exclude: |
-    (?x)(
-        ^output/|
-        ^fonts/|
-        ^charts/|
-        ^old/|
-        ^signatures/|
-        ^ci/
-    )
+  (?x)(
+      ^output/|
+      ^fonts/|
+      ^charts/|
+      ^old/|
+      ^signatures/|
+      ^ci/|
+      ^bazel/|
+      ^docs/|
+      ^bazel-*/|
+  )
