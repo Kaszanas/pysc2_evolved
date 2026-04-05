@@ -14,12 +14,9 @@
 # limitations under the License.
 """Print the valid actions."""
 
-from absl import app
-from absl import flags
+from absl import app, flags
 
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point_flag
+from pysc2_evolved.lib import actions, features, point_flag
 
 FLAGS = flags.FLAGS
 point_flag.DEFINE_point("screen_size", "84", "Resolution for screen actions.")

@@ -20,7 +20,6 @@ from pysc2_evolved.env import sc2_env
 from pysc2_evolved.lib import actions
 from pysc2_evolved.tests import utils
 
-
 AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
     feature_dimensions=sc2_env.Dimensions(screen=32, minimap=32)
 )

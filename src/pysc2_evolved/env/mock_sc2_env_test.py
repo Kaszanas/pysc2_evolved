@@ -14,19 +14,13 @@
 # limitations under the License.
 """Tests of the StarCraft2 mock environment."""
 
-from absl.testing import absltest
 import mock
 import numpy as np
+from absl.testing import absltest
+from s2clientprotocol import common_pb2, raw_pb2, sc2api_pb2
 
-from pysc2_evolved.env import enums
-from pysc2_evolved.env import environment
-from pysc2_evolved.env import mock_sc2_env
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import enums, environment, mock_sc2_env, sc2_env
 from pysc2_evolved.lib import features
-
-from s2clientprotocol import common_pb2
-from s2clientprotocol import raw_pb2
-from s2clientprotocol import sc2api_pb2
 
 
 class _TestMixin(object):

@@ -17,8 +17,7 @@
 from absl.testing import absltest
 
 from pysc2_evolved.agents import scripted_agent
-from pysc2_evolved.env import run_loop
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import run_loop, sc2_env
 from pysc2_evolved.tests import utils
 
 

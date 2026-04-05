@@ -13,18 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from absl.testing import absltest
-from absl.testing import parameterized
 import numpy as np
-
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import units
-from pysc2_evolved.tests import dummy_observation
-
+from absl.testing import absltest, parameterized
 from s2clientprotocol import common_pb2
 
+from pysc2_evolved.lib import actions, features, point, units
+from pysc2_evolved.tests import dummy_observation
 
 _PROBE = dummy_observation.Unit(
     units.Protoss.Probe, features.PlayerRelative.SELF, 20, 20, 0, 0, 1.0

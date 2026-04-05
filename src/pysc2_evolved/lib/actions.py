@@ -19,10 +19,10 @@ import numbers
 from typing import Callable, Dict, Iterable, List
 
 import numpy
-from pysc2_evolved.lib import point
-
 from s2clientprotocol import spatial_pb2 as sc_spatial
 from s2clientprotocol import ui_pb2 as sc_ui
+
+from pysc2_evolved.lib import point
 
 
 class ActionSpace(enum.Enum):

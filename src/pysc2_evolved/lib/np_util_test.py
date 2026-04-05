@@ -14,9 +14,9 @@
 # limitations under the License.
 """Tests for np_util.py."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
 import numpy as np
+from absl.testing import absltest, parameterized
+
 from pysc2_evolved.lib import np_util
 
 

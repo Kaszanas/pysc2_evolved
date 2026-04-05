@@ -13,9 +13,12 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from pysc2_evolved.env.converter.cc.game_data.proto import buffs_pb2
-from pysc2_evolved.env.converter.cc.game_data.proto import units_pb2
-from pysc2_evolved.env.converter.cc.game_data.proto import upgrades_pb2
+
+from pysc2_evolved.env.converter.cc.game_data.proto import (
+    buffs_pb2,
+    units_pb2,
+    upgrades_pb2,
+)
 from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
 
 

@@ -15,13 +15,10 @@
 import os
 
 from absl import flags
-from absl.testing import absltest
-from absl.testing import parameterized
-from pysc2_evolved.lib.replay import sc2_replay
-from pysc2_evolved.lib.replay import sc2_replay_utils
+from absl.testing import absltest, parameterized
 
-from pysc2_evolved.lib import gfile
-from pysc2_evolved.lib import resources
+from pysc2_evolved.lib import gfile, resources
+from pysc2_evolved.lib.replay import sc2_replay, sc2_replay_utils
 
 FLAGS = flags.FLAGS
 PATH = "pysc2_evolved/lib/replay/test_data"

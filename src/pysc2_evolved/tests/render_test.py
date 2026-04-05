@@ -14,17 +14,14 @@
 # limitations under the License.
 """Verify that the game renders rgb pixels."""
 
-from absl.testing import absltest
-
 import numpy as np
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import features
-from pysc2_evolved.tests import utils
-
+from absl.testing import absltest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import features
+from pysc2_evolved.tests import utils
 
 
 class TestRender(utils.TestCase):

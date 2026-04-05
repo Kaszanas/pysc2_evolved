@@ -15,15 +15,12 @@
 """Test host_remote_agent.py."""
 
 from absl.testing import absltest
-
-from pysc2_evolved.env import host_remote_agent
-from pysc2_evolved.lib import remote_controller
-from pysc2_evolved.lib import run_parallel
-from pysc2_evolved.tests import utils
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved.env import host_remote_agent
+from pysc2_evolved.lib import remote_controller, run_parallel
+from pysc2_evolved.tests import utils
 
 NUM_MATCHES = 2
 STEPS = 100

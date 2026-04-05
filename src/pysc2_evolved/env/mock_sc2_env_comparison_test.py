@@ -16,8 +16,7 @@
 
 from absl.testing import absltest
 
-from pysc2_evolved.env import mock_sc2_env
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import mock_sc2_env, sc2_env
 
 
 class TestCompareEnvironments(absltest.TestCase):

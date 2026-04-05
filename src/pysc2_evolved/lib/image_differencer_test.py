@@ -14,14 +14,12 @@
 # limitations under the License.
 """Tests for image_differencer.py."""
 
-from absl.testing import absltest
 import numpy as np
-from pysc2_evolved.lib import image_differencer
-from pysc2_evolved.lib import proto_diff
-
-from s2clientprotocol import common_pb2
+from absl.testing import absltest
+from s2clientprotocol import common_pb2, spatial_pb2
 from s2clientprotocol import sc2api_pb2 as sc_pb
-from s2clientprotocol import spatial_pb2
+
+from pysc2_evolved.lib import image_differencer, proto_diff
 
 
 class ImageDifferencerTest(absltest.TestCase):

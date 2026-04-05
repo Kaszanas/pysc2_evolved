@@ -16,8 +16,7 @@
 
 from absl.testing import absltest
 
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import units
+from pysc2_evolved.lib import actions, units
 from pysc2_evolved.tests import utils
 
 

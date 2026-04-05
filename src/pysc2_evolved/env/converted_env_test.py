@@ -15,19 +15,16 @@
 import concurrent.futures
 import random
 
-from absl.testing import absltest
 import dm_env
-from dm_env import test_utils
 import numpy as np
-from pysc2_evolved.env import converted_env
-from pysc2_evolved.env import mock_sc2_env
-from pysc2_evolved.env import sc2_env
+from absl.testing import absltest
+from dm_env import test_utils
+from s2clientprotocol import common_pb2, sc2api_pb2
+
+from pysc2_evolved.env import converted_env, mock_sc2_env, sc2_env
 from pysc2_evolved.env.converter import converter
 from pysc2_evolved.env.converter.proto import converter_pb2
 from pysc2_evolved.lib import features
-
-from s2clientprotocol import common_pb2
-from s2clientprotocol import sc2api_pb2
 
 
 def _action(delay: int):

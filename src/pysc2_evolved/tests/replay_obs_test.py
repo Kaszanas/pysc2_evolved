@@ -19,18 +19,12 @@ observations of the gameplay.
 """
 
 from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import renderer_ascii
-from pysc2_evolved.lib import units
-from pysc2_evolved.tests import utils
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import actions, features, point, renderer_ascii, units
+from pysc2_evolved.tests import utils
 
 _EMPTY = 0
 

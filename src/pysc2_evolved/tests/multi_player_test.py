@@ -18,16 +18,12 @@ import os
 
 from absl import logging
 from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import portspicker
-from pysc2_evolved.lib import run_parallel
-from pysc2_evolved.tests import utils
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import point, portspicker, run_parallel
+from pysc2_evolved.tests import utils
 
 
 def print_stage(stage):

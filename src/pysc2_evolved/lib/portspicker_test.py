@@ -14,8 +14,8 @@
 # limitations under the License.
 """Tests for portspicker.py."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+from absl.testing import absltest, parameterized
+
 from pysc2_evolved.lib import portspicker
 
 

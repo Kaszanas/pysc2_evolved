@@ -15,17 +15,12 @@
 
 import random
 
-from absl import app
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import units
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import error_pb2 as sc_error
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import actions, features, point, units
 
 
 def get_units(obs, filter_fn=None, owner=None, unit_type=None, tag=None):
@@ -160,7 +155,7 @@ class Env(object):
         self._summary.append((name, replay_info))
 
 
-def main(unused_argv):
+def main():
     env = Env()
 
     def rand_fl_coord():
@@ -217,4 +212,4 @@ def main(unused_argv):
 
 
 if __name__ == "__main__":
-    app.run(main)
+    main()

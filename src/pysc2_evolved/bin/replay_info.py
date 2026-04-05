@@ -16,16 +16,12 @@
 
 import os
 
-from absl import app
-from absl import flags
-
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import remote_controller
-from pysc2_evolved.lib import replay
-
-from pysc2_evolved.lib import gfile
+from absl import app, flags
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import run_configs
+from pysc2_evolved.lib import gfile, remote_controller, replay
 
 FLAGS = flags.FLAGS
 

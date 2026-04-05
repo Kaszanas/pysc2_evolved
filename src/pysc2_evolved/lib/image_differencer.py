@@ -14,11 +14,9 @@
 # limitations under the License.
 """Compare the observations from multiple binaries."""
 
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import np_util
-from pysc2_evolved.lib import proto_diff
-
 from s2clientprotocol import common_pb2
+
+from pysc2_evolved.lib import features, np_util, proto_diff
 
 
 def image_differencer(path, proto_a, proto_b):

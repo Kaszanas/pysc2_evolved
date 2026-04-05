@@ -30,7 +30,13 @@ flags.DEFINE_string("map", "Catalyst", "Which map to run.")
 FLAGS = flags.FLAGS
 
 
-def interface_options(score=False, raw=False, features=None, rgb=None, crop=True):
+def interface_options(
+    score: bool = False,
+    raw: bool = False,
+    features=None,
+    rgb=None,
+    crop: bool = True,
+):
     """Get an InterfaceOptions for the config."""
     interface = sc_pb.InterfaceOptions()
     interface.score = score

@@ -17,21 +17,21 @@ import functools
 
 from absl import logging
 from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import portspicker
-from pysc2_evolved.lib import run_parallel
-from pysc2_evolved.lib import stopwatch
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import error_pb2 as sc_error
 from s2clientprotocol import raw_pb2 as sc_raw
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import (
+    actions,
+    features,
+    point,
+    portspicker,
+    run_parallel,
+    stopwatch,
+)
 
 
 class TestCase(absltest.TestCase):

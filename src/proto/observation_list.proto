@@ -1,9 +1,0 @@
-syntax = "proto2";
-
-package pysc2_evolved;
-
-import "s2clientprotocol/sc2api.proto";
-
-message ObservationList {
-    repeated SC2APIProtocol.ResponseObservation observations = 1;
-}
