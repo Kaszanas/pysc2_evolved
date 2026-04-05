@@ -1,0 +1,86 @@
+# Development image for pysc2 Bazel builds.
+# The C++ converter (pybind11 / protobuf / gRPC / abseil) can only be compiled
+# on Linux, so this container is the intended build environment on Windows/macOS.
+#
+# Base: Ubuntu 22.04 LTS — well-supported toolchain, glibc 2.35.
+FROM ubuntu:22.04
+
+# --------------------------------------------------------------------------- #
+# Prevent interactive prompts during package installation
+# --------------------------------------------------------------------------- #
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# --------------------------------------------------------------------------- #
+# System packages
+#   - build-essential  : gcc/g++/make
+#   - python3-dev      : CPython headers required by pybind11
+#   - openjdk-21-jdk   : Bazel requires JDK 11+; 21 is the current LTS
+#   - curl/unzip/zip   : Bazel bootstrap utilities
+#   - git              : needed by several http_archive rules at build time
+#   - pkg-config       : used by several C++ deps
+#   - libssl-dev       : gRPC TLS support
+#   - zlib1g-dev       : protobuf / gRPC compression
+#   - libtool/m4/autoconf/automake : autotools used by some transitive deps
+# --------------------------------------------------------------------------- #
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        libtool \
+        m4 \
+        autoconf \
+        automake \
+        libssl-dev \
+        zlib1g-dev \
+        pkg-config \
+        patch \
+        unzip \
+        zip \
+        python3 \
+        python3-dev \
+        python3-pip \
+        python3-venv \
+        openjdk-21-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# --------------------------------------------------------------------------- #
+# Make `python` resolve to python3 (pybind11_bazel configure scripts expect it)
+# --------------------------------------------------------------------------- #
+RUN ln -sf /usr/bin/python3 /usr/local/bin/python
+
+# --------------------------------------------------------------------------- #
+# Bazelisk — automatically downloads and pins the correct Bazel version.
+# The version is controlled by .bazelversion in the repo root (if present),
+# or defaults to the latest stable release.
+# --------------------------------------------------------------------------- #
+ARG BAZELISK_VERSION=1.25.0
+RUN curl -fsSL \
+        "https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-amd64" \
+        -o /usr/local/bin/bazel \
+    && chmod +x /usr/local/bin/bazel
+
+# --------------------------------------------------------------------------- #
+# Python dependencies (install early so layer is cached independently of code)
+# --------------------------------------------------------------------------- #
+COPY bazel/requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+
+# --------------------------------------------------------------------------- #
+# Bazel remote cache / output base directories
+# Setting OUTPUT_BASE keeps Bazel's cache outside the workspace so it persists
+# across container rebuilds when the directory is bind-mounted.
+# --------------------------------------------------------------------------- #
+ENV BAZEL_OUTPUT_BASE=/bazel-cache
+RUN mkdir -p /bazel-cache && chmod 777 /bazel-cache
+
+# --------------------------------------------------------------------------- #
+# Working directory — the repo root will be mounted here by VS Code / docker run
+# --------------------------------------------------------------------------- #
+WORKDIR /workspace
+
+# --------------------------------------------------------------------------- #
+# Default command: drop into a shell ready for `bazel build ...`
+# --------------------------------------------------------------------------- #
+CMD ["/bin/bash"]
