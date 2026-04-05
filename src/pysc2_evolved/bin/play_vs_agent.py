@@ -39,20 +39,13 @@ import platform
 import sys
 import time
 
-from absl import app
-from absl import flags
-from absl import logging
 import portpicker
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.env import lan_sc2_env
-from pysc2_evolved.env import run_loop
-from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import point_flag
-from pysc2_evolved.lib import renderer_human
-
+from absl import app, flags, logging
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.env import lan_sc2_env, run_loop, sc2_env
+from pysc2_evolved.lib import point_flag, renderer_human
 
 FLAGS = flags.FLAGS
 flags.DEFINE_bool(

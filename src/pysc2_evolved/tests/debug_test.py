@@ -15,14 +15,12 @@
 """Test that the debug commands work."""
 
 from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import units
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import units
 
 
 class DebugTest(absltest.TestCase):

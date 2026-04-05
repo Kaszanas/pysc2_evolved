@@ -14,15 +14,11 @@
 """Mocking the Starcraft II environment."""
 
 import numpy as np
-from pysc2_evolved.env import environment
-from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import units
-from pysc2_evolved.tests import dummy_observation
+from s2clientprotocol import common_pb2, raw_pb2, sc2api_pb2
 
-from s2clientprotocol import common_pb2
-from s2clientprotocol import raw_pb2
-from s2clientprotocol import sc2api_pb2
+from pysc2_evolved.env import environment, sc2_env
+from pysc2_evolved.lib import features, units
+from pysc2_evolved.tests import dummy_observation
 
 DUMMY_MAP_SIZE = 256
 

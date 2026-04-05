@@ -21,8 +21,7 @@ import random
 import sys
 import time
 
-from absl import app
-from absl import flags
+from absl import app, flags
 
 try:
     import psutil
@@ -34,12 +33,11 @@ except ImportError:
         "$ apt install python-dev"
     )
 
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import protocol
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import protocol
 
 # pylint: enable=g-import-not-at-top
 

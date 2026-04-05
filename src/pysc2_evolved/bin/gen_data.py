@@ -17,12 +17,11 @@
 import collections
 
 from absl import app
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import static_data
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import static_data
 
 
 def get_data():

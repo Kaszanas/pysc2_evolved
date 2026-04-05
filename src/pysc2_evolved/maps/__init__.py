@@ -28,7 +28,6 @@ from pysc2_evolved.maps import lib as lib
 from pysc2_evolved.maps import melee as melee
 from pysc2_evolved.maps import mini_games as mini_games
 
-
 # Use `get` to create a map by name.
 get = lib.get
 get_maps = lib.get_maps

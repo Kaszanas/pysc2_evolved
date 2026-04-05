@@ -14,10 +14,9 @@
 
 """Derives SC2 interface options from converter settings."""
 
-from pysc2_evolved.env.converter.proto import converter_pb2
+from s2clientprotocol import common_pb2, sc2api_pb2
 
-from s2clientprotocol import common_pb2
-from s2clientprotocol import sc2api_pb2
+from pysc2_evolved.env.converter.proto import converter_pb2
 
 
 def from_settings(settings: converter_pb2.ConverterSettings):

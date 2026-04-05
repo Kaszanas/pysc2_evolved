@@ -14,7 +14,6 @@
 """Diff proto objects returning paths to changed attributes."""
 
 import deepdiff
-
 from google.protobuf import json_format
 
 _ARRAY_PLACEHOLDER = "*"

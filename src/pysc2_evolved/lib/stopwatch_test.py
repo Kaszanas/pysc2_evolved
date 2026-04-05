@@ -16,9 +16,9 @@
 
 import os
 
+import mock
 from absl.testing import absltest
 
-import mock
 from pysc2_evolved.lib import stopwatch
 
 

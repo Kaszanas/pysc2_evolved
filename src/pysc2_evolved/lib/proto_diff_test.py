@@ -15,10 +15,10 @@
 """Tests for proto_diff.py."""
 
 from absl.testing import absltest
-from pysc2_evolved.lib import proto_diff
-
 from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import score_pb2
+
+from pysc2_evolved.lib import proto_diff
 
 
 class ProtoPathTest(absltest.TestCase):

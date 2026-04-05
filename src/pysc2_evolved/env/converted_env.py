@@ -20,15 +20,13 @@ from typing import Any, Mapping, NamedTuple, Sequence
 
 import dm_env
 import numpy as np
+import tree
+import typing_extensions
+from s2clientprotocol import common_pb2, raw_pb2, sc2api_pb2
+
 from pysc2_evolved.env.converter import converter as converter_lib
 from pysc2_evolved.env.converter.proto import converter_pb2
 from pysc2_evolved.lib import actions as sc2_actions
-import tree
-import typing_extensions
-
-from s2clientprotocol import common_pb2
-from s2clientprotocol import raw_pb2
-from s2clientprotocol import sc2api_pb2
 
 _BARRIER_TIMEOUT = 30.0
 

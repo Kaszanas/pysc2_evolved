@@ -17,6 +17,7 @@
 import threading
 
 from absl.testing import absltest
+
 from pysc2_evolved.lib import run_parallel
 
 

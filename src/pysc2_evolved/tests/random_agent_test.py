@@ -14,12 +14,10 @@
 # limitations under the License.
 """Run a random agent for a few steps."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+from absl.testing import absltest, parameterized
 
 from pysc2_evolved.agents import random_agent
-from pysc2_evolved.env import run_loop
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import run_loop, sc2_env
 from pysc2_evolved.tests import utils
 
 

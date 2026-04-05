@@ -15,16 +15,11 @@
 """Test that various observations do what you'd expect."""
 
 from absl.testing import absltest
-
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import buffs
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import units
-from pysc2_evolved.tests import utils
-
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import raw_pb2 as sc_raw
 
+from pysc2_evolved.lib import actions, buffs, features, units
+from pysc2_evolved.tests import utils
 
 # It seems the time from issuing an action until it has an effect is 2 frames.
 # It'd be nice if that was faster, and it is 1 in single-player, but in

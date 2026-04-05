@@ -16,11 +16,10 @@
 
 from absl import logging
 from absl.testing import absltest
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
 
 
 def major_version(v):

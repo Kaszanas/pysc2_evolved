@@ -17,16 +17,12 @@
 import copy
 import pickle
 
-from absl.testing import absltest
-from absl.testing import parameterized
 import numpy
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point
-
+from absl.testing import absltest, parameterized
 from google.protobuf import text_format
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved.lib import actions, features, point
 
 # Heavily trimmed, so this is useful for testing actions, but not observations.
 observation_text_proto = """
