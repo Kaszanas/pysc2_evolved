@@ -193,11 +193,65 @@ $ python -m pysc2_evolved.bin.map_list
 
 ## Run the tests
 
-If you want to submit a pull request, please make sure the tests pass on both
-python 2 and 3.
+If you want to submit a pull request, please make sure the tests pass.
+
+### Python tests
+
+Requires a StarCraft II installation (set `SC2PATH` if non-default):
 
 ```shell
 $ python -m pysc2_evolved.bin.run_tests
+```
+
+Individual test files can be run directly with pytest:
+
+```shell
+$ python -m pytest src/pysc2_evolved/lib/point_test.py
+```
+
+### C++ converter tests
+
+The C++ converter (`env/converter/`) is built and tested via Bazel.
+[Bazelisk](https://github.com/bazelbuild/bazelisk) is required — it reads
+`.bazelversion` and downloads the correct Bazel binary automatically.
+
+**Docker-based (no local Bazelisk required):**
+
+Build the dev image once, then run tests or the build inside the container:
+
+```shell
+$ make docker_build_dev
+$ make bazel_test_converter        # runs C++ tests inside the container
+$ make bazel_build_converter       # builds converter.so inside the container
+```
+
+**Install Bazelisk (one-time, for local builds):**
+
+```shell
+$ curl -Lo /usr/local/bin/bazelisk \
+    https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+$ chmod +x /usr/local/bin/bazelisk
+```
+
+**Run all C++ unit tests:**
+
+```shell
+$ make bazel_test_converter_local
+# or directly:
+$ bazelisk test //src/pysc2_evolved/env/converter/cc:all --test_output=errors
+```
+
+**Build the converter `.so` extension only:**
+
+```shell
+$ make bazel_build_converter_local
+# or directly:
+$ bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
+```
+
+The compiled extension is written to
+`bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.so`.
+
 ```
 
 # Environment Details
