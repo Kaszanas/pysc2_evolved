@@ -1,6 +1,22 @@
-# C++ standard required by pybind11
-build --cxxopt=-std=c++17
-build --host_cxxopt=-std=c++17
+# Automatically apply platform-specific config blocks below
+common --enable_platform_specific_config
+
+# C++ standard required by pybind11 — GCC/Clang (Linux, macOS)
+build:linux --cxxopt=-std=c++17
+build:linux --host_cxxopt=-std=c++17
+build:macos --cxxopt=-std=c++17
+build:macos --host_cxxopt=-std=c++17
+
+# C++ standard required by pybind11 — MSVC (Windows)
+build:windows --cxxopt=/std:c++17
+build:windows --host_cxxopt=/std:c++17
+
+# Windows: enable runfiles so tests can locate data files via relative paths
+build:windows --enable_runfiles
+
+# protobuf 30.x deprecates MSVC+Bazel support; required until we migrate off protobuf 30.x
+# See https://github.com/protocolbuffers/protobuf/issues/20085
+build:windows --define=protobuf_allow_msvc=true
 
 # Silence warnings when transitive deps resolve to higher versions than declared
 common --check_direct_dependencies=off

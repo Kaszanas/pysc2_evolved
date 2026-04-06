@@ -46,8 +46,6 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "s2client_proto",
     patches = ["//bazel:s2clientprotocol.patch"],
-    patch_tool = "patch",
-    patch_args = ["-p0"],
     strip_prefix = "s2client-proto-master",
     urls = ["https://github.com/Blizzard/s2client-proto/archive/refs/heads/master.zip"],
 )
@@ -58,8 +56,6 @@ http_archive(
     name = "dm_env_rpc_archive",
     build_file = "//bazel:BUILD.dm_env_rpc",
     patches = ["//bazel:dm_env_rpc_status.patch"],
-    patch_tool = "patch",
-    patch_args = ["-p0"],
     strip_prefix = "dm_env_rpc-master",
     urls = ["https://github.com/deepmind/dm_env_rpc/archive/refs/heads/master.zip"],
 )
