@@ -34,7 +34,7 @@ TEST_P(VisualActionsTest, DecodeEncodeTest) {
   SC2APIProtocol::Action action;
   absl::Status status =
       GetTextProto((
-                       absl::StrCat("pysc2_evolved/"
+                       absl::StrCat("src/pysc2_evolved/"
                                     "env/converter/cc/test_data/actions/",
                                     GetParam())),
                    &action);

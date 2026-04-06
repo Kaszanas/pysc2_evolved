@@ -95,7 +95,7 @@ TEST(ConvertObsDeathTest, FeatureLayers8BitDiesIfLayerNameMismatch) {
 
 TEST(ConvertObs, RawUnitsFullVecTerranAddonPopulated) {
   std::string env_recording_path = (
-      "pysc2_evolved/env/"
+      "src/pysc2_evolved/env/"
       "converter/cc/test_data/recordings/tvt_trunk.pb");
 
   RecordedEpisode env_recording;
