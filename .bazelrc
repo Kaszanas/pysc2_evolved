@@ -1,0 +1,6 @@
+# C++ standard required by pybind11
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
+# Silence warnings when transitive deps resolve to higher versions than declared
+common --check_direct_dependencies=off
