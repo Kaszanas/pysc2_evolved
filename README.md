@@ -21,13 +21,9 @@
 
 # Fork Notice
 
-This project is a fork of the original [PySC2](https://github.com/deepmind/pysc2). Community fork of the original PySC2 project, which seems to be no longer actively maintained. The goal of this project is to modernize PySC2 as PySC2_Evolved and to add new features and improvements over the original project. Please note that the changes may be heavily opinionated, but nonetheless, the aim is to support the original interfaces as closely as possible.
+This project is a fork of the original [PySC2](https://github.com/deepmind/pysc2). The original PySC2 project seems to be no longer actively maintained. The goal of this project is to modernize PySC2 as PySC2_Evolved and to add new features and improvements over the original project. Please note that the changes may be heavily opinionated, but nonetheless, the aim is to support the original interfaces as closely as possible.
 
 # PySC2_Evolved - StarCraft II Learning Environment
-
-Originally created as [PySC2](https://github.com/deepmind/pysc2)
-by [DeepMind](http://deepmind.com) as a Python component of the StarCraft II
-Learning Environment (SC2LE).
 
 It exposes [Blizzard Entertainment](http://blizzard.com)'s
 [StarCraft II Machine Learning API](https://github.com/Blizzard/s2client-proto) as a Python RL Environment.
@@ -42,23 +38,13 @@ and [paper](https://arxiv.org/abs/1708.04782), which outlines our
 motivation for using StarCraft II for DeepRL research, and some initial research
 results using the environment.
 
-## About
-
-Disclaimer: This is not an official Google product.
-
-If you use the StarCraft II Machine Learning API and/or PySC2 in your research,
-please cite the [StarCraft II Paper](https://arxiv.org/abs/1708.04782)
-
-You can reach us at [pysc2_evolved@deepmind.com](mailto:pysc2_evolved@deepmind.com).
-
-
 # Quick Start Guide
 
-## Get PySC2
+## Get PySC2_Evolved
 
 ### PyPI
 
-The easiest way to get PySC2 is to use pip:
+The easiest way to get PySC2_Evolved is to use pip:
 
 ```shell
 $ pip install pysc2_evolved
@@ -75,7 +61,7 @@ be used as a shortcut to `python -m pysc2_evolved.bin.play`.
 
 ### From Source
 
-Alternatively you can install latest PySC2 codebase from git master branch:
+Alternatively you can install latest PySC2_Evolved codebase from git master branch:
 
 ```shell
 $ pip install --upgrade https://github.com/Kaszanas/pysc2_evolved/archive/master.zip
@@ -90,13 +76,13 @@ $ pip install --upgrade pysc2_evolved/
 
 ## Get StarCraft II
 
-PySC2 depends on the full StarCraft II game and only works with versions that
+PySC2_Evolved depends on the full StarCraft II game and only works with versions that
 include the API, which is 3.16.1 and above.
 
 ### Linux
 
 Follow Blizzard's [documentation](https://github.com/Blizzard/s2client-proto#downloads) to
-get the linux version. By default, PySC2 expects the game to live in
+get the linux version. By default, PySC2_Evolved expects the game to live in
 `~/StarCraftII/`. You can override this path by setting the `SC2PATH`
 environment variable or creating your own run_config.
 
@@ -104,11 +90,11 @@ environment variable or creating your own run_config.
 
 Install of the game as normal from [Battle.net](https://battle.net). Even the
 [Starter Edition](http://battle.net/sc2/en/legacy-of-the-void/) will work.
-If you used the default install location PySC2 should find the latest binary.
+If you used the default install location PySC2_Evolved should find the latest binary.
 If you changed the install location, you might need to set the `SC2PATH`
 environment variable with the correct location.
 
-PySC2 should work on MacOS and Windows systems running Python 3.8+,
+PySC2_Evolved should work on MacOS and Windows systems running Python 3.8+,
 but has only been thoroughly tested on Linux. We welcome suggestions and patches
 for better compatibility with other systems.
 
@@ -251,7 +237,6 @@ $ bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
 
 The compiled extension is written to
 `bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.so`.
-
 ```
 
 # Environment Details
