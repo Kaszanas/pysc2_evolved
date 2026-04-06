@@ -1,8 +1,5 @@
 ###############################################################################
 # Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
-#
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
 ###############################################################################
 """
 MODULE.bazel file for the pysc2_evolved project.
@@ -19,33 +16,81 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_python", version = "1.4.1")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.1.0")
-bazel_dep(name = "protobuf", version = "30.2")
-# bazel_dep(name = "rules_proto_grpc", version = "5.0.1")
-bazel_dep(name = "grpc", version = "1.72.0")
+
+# protobuf — aliased to @com_google_protobuf for backward-compat with BUILD files
+# (CC BUILD files reference @com_google_protobuf//:protobuf etc.)
+# NOTE: gRPC is intentionally excluded. The converter doesn't use gRPC C++ services;
+# proto compilation uses protobuf's own py_proto_library rule instead.
+bazel_dep(name = "protobuf", version = "30.2", repo_name = "com_google_protobuf")
+
+# abseil-cpp (C++) — aliased to @com_google_absl for BUILD file compatibility
+bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_absl")
+
+# googletest — aliased to @com_google_googletest for BUILD file compatibility
+bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest")
+
+# glog (C++ logging) — used as @glog in BUILD files; gflags is a transitive dep
+bazel_dep(name = "glog", version = "0.7.1")
+
+# pybind11_bazel — provides pybind_extension() rule for C++/Python bridge
 bazel_dep(name = "pybind11_bazel", version = "2.13.6")
 
+# ============================================================
+# Non-BCR external repos via http_archive
+# ============================================================
 
-# Use repository rules for custom dependencies
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# s2client_proto — StarCraft II API proto definitions (Blizzard)
+# Patched to add a BUILD file with proto_library + cc_proto_library + py_proto_library targets
 http_archive(
-    name = "com_google_googletest",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-        "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-    ],
+    name = "s2client_proto",
+    patches = ["//bazel:s2clientprotocol.patch"],
+    patch_tool = "patch",
+    patch_args = ["-p0"],
+    strip_prefix = "s2client-proto-master",
+    urls = ["https://github.com/Blizzard/s2client-proto/archive/refs/heads/master.zip"],
 )
 
+# dm_env_rpc — DeepMind environment RPC proto library
+# Uses a custom BUILD file (bazel/BUILD.dm_env_rpc)
 http_archive(
-    name = "com_google_absl",
-    sha256 = "35f22ef5cb286f09954b7cc4c85b5a3f6221c9d4df6b8c4a1e9d399555b366ee",
-    strip_prefix = "abseil-cpp-997aaf3a28308eba1b9156aa35ab7bca9688e9f6",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/abseil/abseil-cpp/archive/997aaf3a28308eba1b9156aa35ab7bca9688e9f6.tar.gz",
-        "https://github.com/abseil/abseil-cpp/archive/997aaf3a28308eba1b9156aa35ab7bca9688e9f6.tar.gz",
-    ],
+    name = "dm_env_rpc_archive",
+    build_file = "//bazel:BUILD.dm_env_rpc",
+    patches = ["//bazel:dm_env_rpc_status.patch"],
+    patch_tool = "patch",
+    patch_args = ["-p0"],
+    strip_prefix = "dm_env_rpc-master",
+    urls = ["https://github.com/deepmind/dm_env_rpc/archive/refs/heads/master.zip"],
 )
+
+# dm_env — DeepMind environment Python library
+# Uses a custom BUILD file (bazel/BUILD.dm_env)
+http_archive(
+    name = "dm_env_archive",
+    build_file = "//bazel:BUILD.dm_env",
+    strip_prefix = "dm_env-master",
+    urls = ["https://github.com/deepmind/dm_env/archive/refs/heads/master.zip"],
+)
+
+# absl_py — Python abseil; used as @absl_py//absl/testing:absltest etc.
+# Cannot use pip wheels — Bazel target structure is required.
+# Named "absl_py" (not "absl") to avoid Python module path collision.
+http_archive(
+    name = "absl_py",
+    sha256 = "8a3d0830e4eb4f66c4fa907c06edf6ce1c719ced811a12e26d9d3162f8471758",
+    strip_prefix = "abseil-py-2.1.0",
+    urls = ["https://github.com/abseil/abseil-py/archive/refs/tags/v2.1.0.tar.gz"],
+)
+
+# s2protocol — used by bin/update_battle_net_cache (non-critical for C++ build)
+http_archive(
+    name = "s2protocol_archive",
+    build_file = "//bazel:BUILD.s2protocol",
+    strip_prefix = "s2protocol-master",
+    urls = ["https://github.com/Blizzard/s2protocol/archive/refs/heads/master.zip"],
+)
+
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 

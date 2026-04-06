@@ -7,3 +7,5 @@ bazel-*
 *.SC2Replay
 versions_new.txt
 versions.txt
+
+bazel/google/

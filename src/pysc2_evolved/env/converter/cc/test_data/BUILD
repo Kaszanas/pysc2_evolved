@@ -1,4 +1,4 @@
-load("//pysc2_evolved:build_defs.bzl", "pytype_strict_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_strict_library")
 
 package(default_visibility = ["//visibility:public"])
 
