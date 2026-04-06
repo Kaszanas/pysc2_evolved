@@ -8,7 +8,10 @@ licenses(["notice"])
 pybind_extension(
     name = "converter",
     srcs = ["converter.cc"],
-    copts = ["-fexceptions"],
+    copts = select({
+        "@platforms//os:windows": ["/EHsc"],
+        "//conditions:default": ["-fexceptions"],
+    }),
     features = ["-use_header_modules"],
     deps = [
         "//src/pysc2_evolved/env/converter/cc:converter",

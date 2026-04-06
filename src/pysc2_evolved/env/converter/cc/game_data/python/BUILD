@@ -14,7 +14,10 @@ pybind_extension(
 py_test(
     name = "uint8_lookup_test",
     srcs = ["uint8_lookup_test.py"],
-    data = [":uint8_lookup.so"],
+    data = select({
+        "@platforms//os:windows": [":uint8_lookup.pyd"],
+        "//conditions:default": [":uint8_lookup.so"],
+    }),
     legacy_create_init = False,
     deps = [
         "//src/pysc2_evolved/env/converter/cc/game_data/proto:buffs_py_pb2",

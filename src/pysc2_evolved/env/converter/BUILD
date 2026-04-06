@@ -8,7 +8,10 @@ licenses(["notice"])
 pytype_library(
     name = "converter",
     srcs = ["converter.py"],
-    data = ["//src/pysc2_evolved/env/converter/cc/python:converter.so"],
+    data = select({
+        "@platforms//os:windows": ["//src/pysc2_evolved/env/converter/cc/python:converter.pyd"],
+        "//conditions:default": ["//src/pysc2_evolved/env/converter/cc/python:converter.so"],
+    }),
     deps = [
         "//src/pysc2_evolved/env/converter/proto:converter_py_pb2",
         "@dm_env_archive//:specs",
