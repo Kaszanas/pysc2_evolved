@@ -25,7 +25,7 @@ require compilation. See [this page](bazel.md) for further information.
 ## Supported platforms
 
 Use of converters requires either [building with Bazel](bazel.md) or use of an
-appropriate pre-built wheel. Only Linux is supported at present.
+appropriate pre-built wheel.
 
 ## Raw mode
 

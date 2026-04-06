@@ -1,19 +1,10 @@
 # Building with Bazel
 
-Prior to the inclusion of C++ code it was sufficient to install the
-[pip](https://pypi.org/project/pip/) dependencies of PySC2 and to execute the
-Python code directly using the Python interpreter. This is still possible if
-installing from a [wheel](https://pypi.org/project/wheel/) with a pre-built
-distribution matching the platform on which you are running, else when not
-referencing any of the C++ code. Where that is not the case, or where you would
-like to make changes to the C++ code, a build system becomes necessary. We
-support the use of [Bazel](https://bazel.build/), Google's open-source build
-tool, for this purpose.
+Prior to the inclusion of C++ code it was sufficient to install the [pip](https://pypi.org/project/pip/) dependencies of PySC2 and to execute the Python code directly using the Python interpreter. This is still possible if installing from a [wheel](https://pypi.org/project/wheel/) with a pre-built distribution matching the platform on which you are running, else when not referencing any of the C++ code. Where that is not the case, or where you would like to make changes to the C++ code, a build system becomes necessary. We support the use of [Bazel](https://bazel.build/), Google's open-source build tool, for this purpose.
 
 ## Supported platforms
 
-We support building with Bazel on Ubuntu Linux with C++ 17. In future we may
-support other platforms, should there be demand.
+We support building with Bazel on Ubuntu Linux with C++ 17. In future we may support other platforms, should there be demand.
 
 ## Example
 
@@ -38,9 +29,7 @@ Run some tests.
 $ bazel test --cxxopt='-std=c++17' pysc2_evolved/lib/...
 ```
 
-Beyond that, everything should be the same as running Python directly as
-described in the readme, only rather than using the Python interpreter you use
-Bazel to run. For instance...
+Beyond that, everything should be the same as running Python directly as described in the readme, only rather than using the Python interpreter you use Bazel to run. For instance...
 
 ```shell
 $ python -m pysc2_evolved.bin.agent --map Simple64
