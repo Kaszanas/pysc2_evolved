@@ -4,7 +4,7 @@ Prior to the inclusion of C++ code it was sufficient to install the [pip](https:
 
 ## Supported platforms
 
-We support building with Bazel on Ubuntu Linux with C++ 17. In future we may support other platforms, should there be demand.
+We support building with Bazel on Ubuntu Linux and Windows with C++ 17. Please see the `makefile` targets that build the pysc2.
 
 ## Example
 
