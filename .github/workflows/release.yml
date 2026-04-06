@@ -1,0 +1,321 @@
+name: Release
+
+on:
+    workflow_dispatch:
+    release:
+        types: [published]
+
+jobs:
+    # ──────────────────────────────────────────────────────────────────────────
+    # Guard: verify the release tag (e.g. v0.2.0) matches the version field in
+    # pyproject.toml (e.g. 0.2.0).  Skipped on workflow_dispatch.
+    # ──────────────────────────────────────────────────────────────────────────
+    check-version:
+        name: Verify tag matches pyproject.toml version
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Compare tag with pyproject.toml version
+              shell: bash
+              run: |
+                  PKG_VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*= *"\(.*\)"/\1/')
+                  EXPECTED_TAG="v${PKG_VERSION}"
+                  if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
+                      echo "ERROR: tag '${GITHUB_REF_NAME}' does not match pyproject.toml version '${EXPECTED_TAG}'"
+                      exit 1
+                  fi
+                  echo "OK: tag ${GITHUB_REF_NAME} matches pyproject.toml version ${PKG_VERSION}"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Build a platform-specific wheel on each target OS.
+    #
+    # Steps per platform:
+    #   1. Build pybind11 extensions with Bazel (converter + uint8_lookup).
+    #   2. Copy the compiled binary into the source tree so hatchling picks
+    #      it up when building the wheel.
+    #   3. Run `uv build --wheel`.  The hatch_build.py hook sets
+    #      pure_python = False, causing hatchling to emit a CPython/platform
+    #      tagged wheel (e.g. cp311-cp311-linux_x86_64.whl) that includes
+    #      the .so / .pyd extension.
+    #
+    # NOTE: The Linux wheel is tagged linux_x86_64 (not manylinux).  It works
+    # for direct pip installs and GitHub Releases.  For PyPI publishing,
+    # replace this job with a cibuildwheel manylinux build.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-wheel:
+        name: Build wheel (${{ matrix.os }})
+        needs: [check-version]
+        if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      ext: so
+                    - os: windows-latest
+                      ext: pyd
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            # Installs Bazelisk and wires up Bazel disk + repository caching.
+            - name: Set up Bazel
+              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+              with:
+                  bazelisk-cache: true
+                  disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+                  repository-cache: true
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+              with:
+                  python-version: "3.11"
+
+            - name: Build pybind11 extensions
+              run: |
+                  bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
+                  bazelisk build //src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
+
+            # Copy compiled extensions into the source tree so hatchling
+            # includes them in the wheel.
+            - name: Copy extensions into source tree
+              shell: bash
+              run: |
+                  cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.${{ matrix.ext }} \
+                     src/pysc2_evolved/env/converter/cc/python/converter.${{ matrix.ext }}
+                  cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ matrix.ext }} \
+                     src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ matrix.ext }}
+
+            - name: Build wheel
+              run: uv build --wheel
+
+            - name: Upload wheel
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+              with:
+                  name: wheel-${{ matrix.os }}
+                  path: dist/*.whl
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Build a pure-Python source distribution (sdist).
+    # Users who build from source will compile the extension themselves.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-sdist:
+        name: Build source distribution
+        needs: [check-version]
+        if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+
+            - name: Build sdist
+              run: uv build --sdist
+
+            - name: Upload sdist
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+              with:
+                  name: sdist
+                  path: dist/*.tar.gz
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Publish all wheels + sdist to TestPyPI first.
+    # Uses OIDC trusted publishing — no API token required.
+    # Configure a pending publisher on test.pypi.org pointing at this workflow.
+    # ──────────────────────────────────────────────────────────────────────────
+    publish-test-pypi:
+        name: Publish to TestPyPI
+        needs: [build-wheel, build-sdist]
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+
+        steps:
+            - name: Download Linux wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-ubuntu-latest
+                  path: dist
+
+            - name: Download Windows wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-windows-latest
+                  path: dist
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Publish to TestPyPI
+              uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+              with:
+                  repository-url: https://test.pypi.org/legacy/
+                  skip-existing: true
+                  verbose: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Install from TestPyPI and run a functional smoke test on each platform.
+    #
+    # The smoke test goes beyond a simple import: it calls zero-argument C++
+    # functions (MaximumUnitTypeId, MaximumBuffId) to prove the native code
+    # actually executes, and asserts that the converter module exposes the
+    # expected Converter class and MakeConverter factory.
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-test-pypi:
+        name: Verify install from TestPyPI (${{ matrix.os }}, ${{ matrix.pkg }})
+        needs: [publish-test-pypi]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                pkg: [pysc2_evolved, pysc2-evolved]
+
+        steps:
+            - name: Install from TestPyPI
+              run: |
+                  pip install \
+                      --index-url https://test.pypi.org/simple/ \
+                      --extra-index-url https://pypi.org/simple \
+                      ${{ matrix.pkg }}
+
+            - name: Verify pybind11 extensions work
+              run: |
+                  python -c "
+                  from pysc2_evolved.env.converter.cc.python import converter
+                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
+
+                  # converter: check the expected class and factory are present
+                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
+                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
+
+                  # uint8_lookup: actually call no-arg C++ functions to exercise native code
+                  max_unit = uint8_lookup.MaximumUnitTypeId()
+                  max_buff = uint8_lookup.MaximumBuffId()
+                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
+                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
+
+                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
+                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
+                  "
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Publish to production PyPI only after all TestPyPI verifications pass.
+    # Skipped on workflow_dispatch — production publishing only happens on release.
+    # ──────────────────────────────────────────────────────────────────────────
+    publish-pypi:
+        name: Publish to PyPI
+        needs: [verify-test-pypi]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        permissions:
+            id-token: write
+
+        steps:
+            - name: Download Linux wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-ubuntu-latest
+                  path: dist
+
+            - name: Download Windows wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-windows-latest
+                  path: dist
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Publish to PyPI
+              uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+              with:
+                  verbose: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Smoke-test the production PyPI install on both platforms.
+    # Skipped on workflow_dispatch (publish-pypi is skipped, so this is too).
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-pypi:
+        name: Verify install from PyPI (${{ matrix.os }}, ${{ matrix.pkg }})
+        needs: [publish-pypi]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                pkg: [pysc2_evolved, pysc2-evolved]
+
+        steps:
+            - name: Install from PyPI
+              run: pip install ${{ matrix.pkg }}
+
+            - name: Verify pybind11 extensions work
+              run: |
+                  python -c "
+                  from pysc2_evolved.env.converter.cc.python import converter
+                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
+
+                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
+                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
+
+                  max_unit = uint8_lookup.MaximumUnitTypeId()
+                  max_buff = uint8_lookup.MaximumBuffId()
+                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
+                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
+
+                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
+                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
+                  "
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Attach all built artifacts to the GitHub Release.
+    # Runs in parallel with the PyPI pipeline.
+    # Skipped on workflow_dispatch — there is no release to attach to.
+    # ──────────────────────────────────────────────────────────────────────────
+    upload-github-assets:
+        name: Upload release assets
+        needs: [build-wheel, build-sdist]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        permissions:
+            contents: write
+
+        steps:
+            - name: Download Linux wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-ubuntu-latest
+                  path: dist
+
+            - name: Download Windows wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-windows-latest
+                  path: dist
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Attach artifacts to GitHub Release
+              uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
+              with:
+                  files: dist/*

@@ -41,6 +41,9 @@ extend-select = ["I"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysc2_evolved"]
 
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
 [tool.uv.sources]
 s2protocol = { git = "https://github.com/Kaszanas/s2protocol" }
 
