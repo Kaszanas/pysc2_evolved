@@ -1,6 +1,10 @@
+--- /dev/null	2021-11-18 12:14:07.885666323 +0000
 +++ s2clientprotocol/BUILD	2021-11-18 12:14:07.885666323 +0000
-@@ -0,0 +1,255 @@
-+load("@protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+@@ -0,0 +1,258 @@
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
++load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
++load("@rules_python//python:defs.bzl", "py_library")
 +
 +package(default_visibility = ["//visibility:public"])
 +
@@ -255,27 +259,3 @@
 +        ":ui_pb2",
 +    ],
 +)
-
-+++ WORKSPACE	2021-11-18 12:14:07.885666323 +0000
-@@ -0,0 +1,21 @@
-+workspace(name = "s2client-proto")
-+
-+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-+
-+# The protobuf library, for protoc.
-+git_repository(
-+    name = "com_google_protobuf",
-+    remote = "https://github.com/protocolbuffers/protobuf",
-+    branch = "master",
-+)
-+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-+protobuf_deps()
-+
-+# GRPC, for the py_proto_library rule.
-+git_repository(
-+    name = "com_github_grpc_grpc",
-+    remote = "https://github.com/grpc/grpc.git",
-+    branch = "master",
-+)
-+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-+grpc_deps()

@@ -1,13 +1,25 @@
-load("@protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@rules_python//python:defs.bzl", "py_library")
 
 licenses(["notice"])
+
+# google/rpc/status.proto vendored locally (see bazel/dm_env_rpc_status.patch).
+# The srcs path determines the proto import path: "google/rpc/status.proto".
+proto_library(
+    name = "google_rpc_status_proto",
+    srcs = ["google/rpc/status.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
 
 proto_library(
     name = "dm_env_rpc_proto",
     srcs = ["dm_env_rpc/v1/dm_env_rpc.proto"],
     visibility = ["//visibility:public"],
     deps = [
-        "@com_google_googleapis//google/rpc:status_proto",
+        ":google_rpc_status_proto",
         "@com_google_protobuf//:any_proto",
     ],
 )
@@ -25,7 +37,7 @@ py_proto_library(
 
 py_proto_library(
     name = "status_pb2",
-    deps = ["@com_google_googleapis//google/rpc:status_proto"],
+    deps = [":google_rpc_status_proto"],
 )
 
 py_library(
