@@ -1,10 +1,13 @@
-load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_proto_library")
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
 
 licenses(["notice"])
 
 proto_library(
     name = "converter_proto",
     srcs = ["converter.proto"],
+    strip_import_prefix = "/src",
     deps = [
         "@s2client_proto//s2clientprotocol:common_proto",
         "@s2client_proto//s2clientprotocol:sc2api_proto",

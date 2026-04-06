@@ -1,4 +1,4 @@
-load("//pysc2_evolved:build_defs.bzl", "pytype_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -11,7 +11,7 @@ pytype_library(
     deps = [
         ":lib",
         ":platforms",
-        "//pysc2_evolved/lib:sc_process",
+        "//src/pysc2_evolved/lib:sc_process",
         "@absl_py//absl/flags",
     ],
 )
@@ -21,7 +21,7 @@ pytype_library(
     srcs = ["lib.py"],
     srcs_version = "PY3",
     deps = [
-        "//pysc2_evolved/lib:gfile",
+        "//src/pysc2_evolved/lib:gfile",
     ],
 )
 
@@ -30,7 +30,7 @@ pytype_library(
     srcs = ["platforms.py"],
     deps = [
         ":lib",
-        "//pysc2_evolved/lib:sc_process",
+        "//src/pysc2_evolved/lib:sc_process",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
     ],
