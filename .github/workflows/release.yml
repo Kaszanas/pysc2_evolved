@@ -178,6 +178,9 @@ jobs:
                 pkg: [pysc2_evolved, pysc2-evolved]
 
         steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
             - name: Install from TestPyPI
               run: |
                   pip install \
@@ -186,24 +189,7 @@ jobs:
                       ${{ matrix.pkg }}
 
             - name: Verify pybind11 extensions work
-              run: |
-                  python -c "
-                  from pysc2_evolved.env.converter.cc.python import converter
-                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
-
-                  # converter: check the expected class and factory are present
-                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
-                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
-
-                  # uint8_lookup: actually call no-arg C++ functions to exercise native code
-                  max_unit = uint8_lookup.MaximumUnitTypeId()
-                  max_buff = uint8_lookup.MaximumBuffId()
-                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
-                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
-
-                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
-                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
-                  "
+              uses: ./.github/actions/smoke-test-converter
 
     # ──────────────────────────────────────────────────────────────────────────
     # Publish to production PyPI only after all TestPyPI verifications pass.
@@ -256,26 +242,14 @@ jobs:
                 pkg: [pysc2_evolved, pysc2-evolved]
 
         steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
             - name: Install from PyPI
               run: pip install ${{ matrix.pkg }}
 
             - name: Verify pybind11 extensions work
-              run: |
-                  python -c "
-                  from pysc2_evolved.env.converter.cc.python import converter
-                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
-
-                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
-                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
-
-                  max_unit = uint8_lookup.MaximumUnitTypeId()
-                  max_buff = uint8_lookup.MaximumBuffId()
-                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
-                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
-
-                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
-                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
-                  "
+              uses: ./.github/actions/smoke-test-converter
 
     # ──────────────────────────────────────────────────────────────────────────
     # Attach all built artifacts to the GitHub Release.
