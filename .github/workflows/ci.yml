@@ -48,33 +48,6 @@ jobs:
             # - name: Build documentation
             #   run: uv run make html --directory docs/
 
-    bazel-converter:
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Check-out repository
-              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
-
-            - name: Build dev Docker image
-              uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
-              with:
-                  context: .
-                  file: docker/Dockerfile.dev
-                  load: true
-                  tags: pysc2_evolved-dev
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
-
-            - name: Build C++ converter extension
-              run: make bazel_build_converter
-
-            - name: Run C++ converter unit tests
-              run: make bazel_test_converter
-
     bazel-converter-windows:
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
         runs-on: windows-latest
@@ -93,10 +66,10 @@ jobs:
                   repository-cache: true
 
             - name: Build C++ converter extension
-              run: bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
+              run: make bazel_build_converter_local
 
             - name: Run C++ converter unit tests
-              run: bazelisk test //src/pysc2_evolved/env/converter/cc:all --test_output=errors
+              run: make bazel_test_converter_local
 
             # Reuse the build-wheel action — Bazel is already set up above so
             # the bazelisk build steps will be instant cache hits.
@@ -115,6 +88,21 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
+            - name: Set up Bazel
+              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+              with:
+                  bazelisk-cache: true
+                  disk-cache: ${{ github.workflow }}-ubuntu-latest
+                  repository-cache: true
+
+            - name: Build C++ converter extension
+              run: make bazel_build_converter_local
+
+            - name: Run C++ converter unit tests
+              run: make bazel_test_converter_local
+
+            # Bazel is already set up above; the build steps in the action are
+            # instant cache hits.
             - name: Build and upload wheel
               uses: ./.github/actions/build-wheel
               with:

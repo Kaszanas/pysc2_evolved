@@ -36,21 +36,15 @@ runs:
 
     - name: Build pybind11 extensions
       shell: bash
-      run: |
-        bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
-        bazelisk build //src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
+      run: make bazel_build_extensions_local
 
     - name: Copy extensions into source tree
       shell: bash
-      run: |
-        cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.${{ inputs.ext }} \
-           src/pysc2_evolved/env/converter/cc/python/converter.${{ inputs.ext }}
-        cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ inputs.ext }} \
-           src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ inputs.ext }}
+      run: make copy_extensions_local EXT=${{ inputs.ext }}
 
     - name: Build wheel
       shell: bash
-      run: uv build --wheel
+      run: make build_wheel_local
 
     - name: Upload wheel
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f

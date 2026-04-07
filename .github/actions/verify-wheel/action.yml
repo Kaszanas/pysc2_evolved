@@ -18,9 +18,6 @@ runs:
               name: ${{ inputs.artifact-name }}
               path: dist
 
-        - name: Install wheel
+        - name: Install and verify wheel
           shell: bash
-          run: pip install dist/*.whl
-
-        - name: Verify pybind11 extensions work
-          uses: ./.github/actions/smoke-test-converter
+          run: make verify_wheel_local
