@@ -51,6 +51,10 @@ jobs:
     bazel-converter-windows:
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
         runs-on: windows-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13", "3.14"]
 
         steps:
             - name: Check-out repository
@@ -77,12 +81,17 @@ jobs:
               uses: ./.github/actions/build-wheel
               with:
                   ext: pyd
-                  artifact-name: ci-wheel-windows-latest
+                  artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
                   bazel-disk-cache: ${{ github.workflow }}-windows
+                  python-version: ${{ matrix.python-version }}
 
     build-wheel-linux:
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13", "3.14"]
 
         steps:
             - name: Check-out repository
@@ -107,8 +116,9 @@ jobs:
               uses: ./.github/actions/build-wheel
               with:
                   ext: so
-                  artifact-name: ci-wheel-ubuntu-latest
+                  artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
                   bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest
+                  python-version: ${{ matrix.python-version }}
 
     verify-wheel:
         needs: [bazel-converter-windows, build-wheel-linux]
@@ -118,6 +128,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13", "3.14"]
 
         steps:
             - name: Check-out repository
@@ -126,4 +137,5 @@ jobs:
             - name: Verify wheel
               uses: ./.github/actions/verify-wheel
               with:
-                  artifact-name: ci-wheel-${{ matrix.os }}
+                  artifact-name: ci-wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
