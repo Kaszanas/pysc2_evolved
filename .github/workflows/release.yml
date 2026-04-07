@@ -135,6 +135,7 @@ jobs:
     verify-wheel:
         name: Verify wheel install (${{ matrix.os }})
         needs: [build-wheel]
+        if: always() && needs.build-wheel.result == 'success'
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
