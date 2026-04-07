@@ -128,13 +128,56 @@ jobs:
                   path: dist/*.tar.gz
 
     # ──────────────────────────────────────────────────────────────────────────
+    # Install the built wheel directly from the artifact on each platform and
+    # run a functional smoke test.  Runs on every workflow trigger so the
+    # native extensions are always verified before any publishing step.
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-wheel:
+        name: Verify wheel install (${{ matrix.os }})
+        needs: [build-wheel]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+
+        steps:
+            - name: Download wheel
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: wheel-${{ matrix.os }}
+                  path: dist
+
+            - name: Install wheel
+              shell: bash
+              run: pip install dist/*.whl
+
+            - name: Verify pybind11 extensions work
+              run: |
+                  python -c "
+                  from pysc2_evolved.env.converter.cc.python import converter
+                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
+
+                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
+                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
+
+                  max_unit = uint8_lookup.MaximumUnitTypeId()
+                  max_buff = uint8_lookup.MaximumBuffId()
+                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
+                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
+
+                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
+                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
+                  "
+
+    # ──────────────────────────────────────────────────────────────────────────
     # Publish all wheels + sdist to TestPyPI first.
     # Uses OIDC trusted publishing — no API token required.
     # Configure a pending publisher on test.pypi.org pointing at this workflow.
     # ──────────────────────────────────────────────────────────────────────────
     publish-test-pypi:
         name: Publish to TestPyPI
-        needs: [build-wheel, build-sdist]
+        needs: [verify-wheel, build-sdist]
         runs-on: ubuntu-latest
         permissions:
             id-token: write
