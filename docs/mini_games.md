@@ -4,9 +4,7 @@
 
 #### Description
 
-A map with 1 Marine and 1 Beacon. Rewards are earned by moving the marine to the
-beacon. Whenever the Marine earns a reward for reaching the Beacon, the Beacon
-is teleported to a random location (at least 5 units away from Marine).
+A map with 1 Marine and 1 Beacon. Rewards are earned by moving the marine to the beacon. Whenever the Marine earns a reward for reaching the Beacon, the Beacon is teleported to a random location (at least 5 units away from Marine).
 
 #### Initial State
 
@@ -34,11 +32,7 @@ is teleported to a random location (at least 5 units away from Marine).
 
 #### Description
 
-A map with 2 Marines and an endless supply of Mineral Shards. Rewards are earned
-by moving the Marines to collect the Mineral Shards, with optimal collection
-requiring both Marine units to be split up and moved independently. Whenever all
-20 Mineral Shards have been collected, a new set of 20 Mineral Shards are
-spawned at random locations (at least 2 units away from all Marines).
+A map with 2 Marines and an endless supply of Mineral Shards. Rewards are earned by moving the Marines to collect the Mineral Shards, with optimal collection requiring both Marine units to be split up and moved independently. Whenever all 20 Mineral Shards have been collected, a new set of 20 Mineral Shards are spawned at random locations (at least 2 units away from all Marines).
 
 #### Initial State
 
@@ -69,12 +63,7 @@ spawned at random locations (at least 2 units away from all Marines).
 
 #### Description
 
-A map with 3 Marines and an endless supply of stationary Zerglings. Rewards are
-earned by using the Marines to defeat Zerglings, with the optimal strategy
-requiring a combination of efficient exploration and combat. Whenever all 25
-Zerglings have been defeated, a new set of 25 Zerglings are spawned at random
-locations (at least 9 units away from all Marines and at least 5 units away from
-all other Zerglings).
+A map with 3 Marines and an endless supply of stationary Zerglings. Rewards are earned by using the Marines to defeat Zerglings, with the optimal strategy requiring a combination of efficient exploration and combat. Whenever all 25 Zerglings have been defeated, a new set of 25 Zerglings are spawned at random locations (at least 9 units away from all Marines and at least 5 units away from all other Zerglings).
 
 #### Initial State
 
@@ -109,13 +98,7 @@ all other Zerglings).
 
 #### Description
 
-A map with 9 Marines and a group of 4 Roaches on opposite sides. Rewards are
-earned by using the Marines to defeat Roaches, with optimal combat strategy
-requiring the Marines to perform focus fire on the Roaches. Whenever all 4
-Roaches have been defeated, a new group of 4 Roaches is spawned and the player
-is awarded 5 additional Marines at full health, with all other surviving Marines
-retaining their existing health (no restore). Whenever new units are spawned,
-all unit positions are reset to opposite sides of the map.
+A map with 9 Marines and a group of 4 Roaches on opposite sides. Rewards are earned by using the Marines to defeat Roaches, with optimal combat strategy requiring the Marines to perform focus fire on the Roaches. Whenever all 4 Roaches have been defeated, a new group of 4 Roaches is spawned and the player is awarded 5 additional Marines at full health, with all other surviving Marines retaining their existing health (no restore). Whenever new units are spawned, all unit positions are reset to opposite sides of the map.
 
 #### Initial State
 
@@ -153,13 +136,7 @@ all unit positions are reset to opposite sides of the map.
 
 #### Description
 
-A map with 9 Marines on the opposite side from a group of 6 Zerglings and 4
-Banelings. Rewards are earned by using the Marines to defeat Zerglings and
-Banelings. Whenever all Zerglings and Banelings have been defeated, a new group
-of 6 Zerglings and 4 Banelings is spawned and the player is awarded 4 additional
-Marines at full health, with all other surviving Marines retaining their
-existing health (no restore). Whenever new units are spawned, all unit positions
-are reset to opposite sides of the map.
+A map with 9 Marines on the opposite side from a group of 6 Zerglings and 4 Banelings. Rewards are earned by using the Marines to defeat Zerglings and Banelings. Whenever all Zerglings and Banelings have been defeated, a new group of 6 Zerglings and 4 Banelings is spawned and the player is awarded 4 additional Marines at full health, with all other surviving Marines retaining their existing health (no restore). Whenever new units are spawned, all unit positions are reset to opposite sides of the map.
 
 #### Initial State
 
@@ -198,12 +175,7 @@ are reset to opposite sides of the map.
 
 #### Description
 
-A map with 12 SCVs, 1 Command Center, 16 Mineral Fields and 4 Vespene Geysers.
-Rewards are based on the total amount of Minerals and Vespene Gas collected.
-Spending Minerals and Vespene Gas to train new units does not decrease your
-reward tally. Optimal collection will require expanding your capacity to gather
-Minerals and Vespene Gas by constructing additional SCVs and an additional
-Command Center.
+A map with 12 SCVs, 1 Command Center, 16 Mineral Fields and 4 Vespene Geysers. Rewards are based on the total amount of Minerals and Vespene Gas collected. Spending Minerals and Vespene Gas to train new units does not decrease your reward tally. Optimal collection will require expanding your capacity to gather Minerals and Vespene Gas by constructing additional SCVs and an additional Command Center.
 
 #### Initial State
 
@@ -229,10 +201,7 @@ Time elapsed
 
 #### Description
 
-A map with 12 SCVs, 1 Command Center, and 8 Mineral Fields. Rewards are earned
-by building Marines. This is accomplished by using SCVs to collect minerals,
-which are used to build Supply Depots and Barracks, which can then build
-Marines.
+A map with 12 SCVs, 1 Command Center, and 8 Mineral Fields. Rewards are earned by building Marines. This is accomplished by using SCVs to collect minerals, which are used to build Supply Depots and Barracks, which can then build Marines.
 
 #### Initial State
 
