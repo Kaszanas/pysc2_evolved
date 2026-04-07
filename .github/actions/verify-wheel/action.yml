@@ -1,0 +1,42 @@
+name: Verify wheel
+description: >
+    Download a wheel artifact, install it with pip, and run a functional
+    smoke test to confirm the pybind11 native extensions are present and
+    execute C++ code correctly.
+
+inputs:
+    artifact-name:
+        description: Name of the wheel artifact to download and install
+        required: true
+
+runs:
+    using: composite
+    steps:
+        - name: Download wheel
+          uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+          with:
+              name: ${{ inputs.artifact-name }}
+              path: dist
+
+        - name: Install wheel
+          shell: bash
+          run: pip install dist/*.whl
+
+        - name: Verify pybind11 extensions work
+          shell: bash
+          run: |
+              python -c "
+              from pysc2_evolved.env.converter.cc.python import converter
+              from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
+
+              assert hasattr(converter, 'Converter'), 'converter.Converter missing'
+              assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
+
+              max_unit = uint8_lookup.MaximumUnitTypeId()
+              max_buff = uint8_lookup.MaximumBuffId()
+              assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
+              assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
+
+              print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
+              print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
+              "

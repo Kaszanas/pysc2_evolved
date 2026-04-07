@@ -1,0 +1,59 @@
+name: Build wheel
+description: >
+  Build pybind11 extensions with Bazel, copy them into the source tree,
+  and package a platform-specific wheel with uv.  Uploads the wheel as a
+  GitHub Actions artifact under the given name.
+
+inputs:
+  ext:
+    description: Compiled extension suffix — "so" (Linux) or "pyd" (Windows)
+    required: true
+  artifact-name:
+    description: Name for the uploaded wheel artifact
+    required: true
+  bazel-disk-cache:
+    description: Bazel disk-cache key passed to bazel-contrib/setup-bazel
+    required: true
+  python-version:
+    description: Python version to install via uv
+    required: false
+    default: "3.11"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Bazel
+      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ inputs.bazel-disk-cache }}
+        repository-cache: true
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Build pybind11 extensions
+      shell: bash
+      run: |
+        bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
+        bazelisk build //src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
+
+    - name: Copy extensions into source tree
+      shell: bash
+      run: |
+        cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.${{ inputs.ext }} \
+           src/pysc2_evolved/env/converter/cc/python/converter.${{ inputs.ext }}
+        cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ inputs.ext }} \
+           src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ inputs.ext }}
+
+    - name: Build wheel
+      shell: bash
+      run: uv build --wheel
+
+    - name: Upload wheel
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: dist/*.whl

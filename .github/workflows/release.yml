@@ -64,42 +64,12 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            # Installs Bazelisk and wires up Bazel disk + repository caching.
-            - name: Set up Bazel
-              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+            - name: Build and upload wheel
+              uses: ./.github/actions/build-wheel
               with:
-                  bazelisk-cache: true
-                  disk-cache: ${{ github.workflow }}-${{ matrix.os }}
-                  repository-cache: true
-
-            - name: Install uv
-              uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
-              with:
-                  python-version: "3.11"
-
-            - name: Build pybind11 extensions
-              run: |
-                  bazelisk build //src/pysc2_evolved/env/converter/cc/python:converter
-                  bazelisk build //src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
-
-            # Copy compiled extensions into the source tree so hatchling
-            # includes them in the wheel.
-            - name: Copy extensions into source tree
-              shell: bash
-              run: |
-                  cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.${{ matrix.ext }} \
-                     src/pysc2_evolved/env/converter/cc/python/converter.${{ matrix.ext }}
-                  cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ matrix.ext }} \
-                     src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.${{ matrix.ext }}
-
-            - name: Build wheel
-              run: uv build --wheel
-
-            - name: Upload wheel
-              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
-              with:
-                  name: wheel-${{ matrix.os }}
-                  path: dist/*.whl
+                  ext: ${{ matrix.ext }}
+                  artifact-name: wheel-${{ matrix.os }}
+                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Build a pure-Python source distribution (sdist).
@@ -143,33 +113,13 @@ jobs:
                 os: [ubuntu-latest, windows-latest]
 
         steps:
-            - name: Download wheel
-              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Verify wheel
+              uses: ./.github/actions/verify-wheel
               with:
-                  name: wheel-${{ matrix.os }}
-                  path: dist
-
-            - name: Install wheel
-              shell: bash
-              run: pip install dist/*.whl
-
-            - name: Verify pybind11 extensions work
-              run: |
-                  python -c "
-                  from pysc2_evolved.env.converter.cc.python import converter
-                  from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
-
-                  assert hasattr(converter, 'Converter'), 'converter.Converter missing'
-                  assert hasattr(converter, 'MakeConverter'), 'converter.MakeConverter missing'
-
-                  max_unit = uint8_lookup.MaximumUnitTypeId()
-                  max_buff = uint8_lookup.MaximumBuffId()
-                  assert isinstance(max_unit, int) and max_unit > 0, f'unexpected MaximumUnitTypeId: {max_unit}'
-                  assert isinstance(max_buff, int) and max_buff > 0, f'unexpected MaximumBuffId: {max_buff}'
-
-                  print(f'converter  OK  Converter={converter.Converter}  MakeConverter={converter.MakeConverter}')
-                  print(f'uint8_lookup OK  MaximumUnitTypeId={max_unit}  MaximumBuffId={max_buff}')
-                  "
+                  artifact-name: wheel-${{ matrix.os }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Publish all wheels + sdist to TestPyPI first.

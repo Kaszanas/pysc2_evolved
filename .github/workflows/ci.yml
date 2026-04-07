@@ -97,3 +97,45 @@ jobs:
 
             - name: Run C++ converter unit tests
               run: bazelisk test //src/pysc2_evolved/env/converter/cc:all --test_output=errors
+
+            # Reuse the build-wheel action — Bazel is already set up above so
+            # the bazelisk build steps will be instant cache hits.
+            - name: Build and upload wheel
+              uses: ./.github/actions/build-wheel
+              with:
+                  ext: pyd
+                  artifact-name: ci-wheel-windows-latest
+                  bazel-disk-cache: ${{ github.workflow }}-windows
+
+    build-wheel-linux:
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Build and upload wheel
+              uses: ./.github/actions/build-wheel
+              with:
+                  ext: so
+                  artifact-name: ci-wheel-ubuntu-latest
+                  bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest
+
+    verify-wheel:
+        needs: [bazel-converter-windows, build-wheel-linux]
+        if: always() && needs.bazel-converter-windows.result == 'success' && needs.build-wheel-linux.result == 'success'
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Verify wheel
+              uses: ./.github/actions/verify-wheel
+              with:
+                  artifact-name: ci-wheel-${{ matrix.os }}
