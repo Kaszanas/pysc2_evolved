@@ -31,6 +31,7 @@ class CustomBuildHook(BuildHookInterface):
             return
 
         build_data["pure_python"] = False
+        build_data["infer_tag"] = True
         for src_path in found:
             # Strip the leading "src/" so the wheel path mirrors the import path.
             # e.g. src/pysc2_evolved/env/.../converter.pyd
