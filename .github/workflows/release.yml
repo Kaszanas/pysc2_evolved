@@ -23,7 +23,7 @@ jobs:
               shell: bash
               run: |
                   PKG_VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*= *"\(.*\)"/\1/')
-                  EXPECTED_TAG="v${PKG_VERSION}"
+                  EXPECTED_TAG="${PKG_VERSION}"
                   if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
                       echo "ERROR: tag '${GITHUB_REF_NAME}' does not match pyproject.toml version '${EXPECTED_TAG}'"
                       exit 1
