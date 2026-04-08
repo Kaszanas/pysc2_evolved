@@ -27,6 +27,12 @@ runs:
               name: ${{ inputs.artifact-name }}
               path: dist
 
+        - name: Create isolated virtual environment
+          shell: bash
+          run: uv venv .venv-verify --python ${{ inputs.python-version }}
+
         - name: Install and verify wheel
           shell: bash
           run: make verify_wheel_local
+          env:
+              VIRTUAL_ENV: ${{ github.workspace }}/.venv-verify
