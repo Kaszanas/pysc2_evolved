@@ -36,13 +36,15 @@ jobs:
     # Compiled binaries are uploaded as artifacts for the packaging jobs below.
     # ──────────────────────────────────────────────────────────────────────────
     build-cc:
-        name: Build C++ extensions (${{ matrix.os }})
+        name: Build C++ extensions (${{ matrix.os }}, py${{ matrix.python-version }})
         needs: [check-version]
         if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
                 include:
                     - os: ubuntu-latest
                       ext: so
@@ -57,16 +59,15 @@ jobs:
               uses: ./.github/actions/build-cc
               with:
                   ext: ${{ matrix.ext }}
-                  artifact-name: cc-${{ matrix.os }}
-                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+                  artifact-name: cc-${{ matrix.os }}-py${{ matrix.python-version }}
+                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Package a platform-specific wheel for each supported Python version.
     # Downloads the pre-built C++ artifact — no Bazel compilation here.
-    #
-    # NOTE: The Linux wheel is tagged linux_x86_64 (not manylinux).  It works
-    # for direct pip installs and GitHub Releases.  For PyPI publishing,
-    # replace this job with a cibuildwheel manylinux build.
+    # Linux wheels are repaired with auditwheel to produce manylinux wheels
+    # suitable for PyPI.  Windows wheels are uploaded as-is (win_amd64).
     # ──────────────────────────────────────────────────────────────────────────
     build-wheel:
         name: Build wheel (${{ matrix.os }}, py${{ matrix.python-version }})
@@ -93,7 +94,7 @@ jobs:
               with:
                   ext: ${{ matrix.ext }}
                   artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
-                  cc-artifact-name: cc-${{ matrix.os }}
+                  cc-artifact-name: cc-${{ matrix.os }}-py${{ matrix.python-version }}
                   python-version: ${{ matrix.python-version }}
 
     # ──────────────────────────────────────────────────────────────────────────
