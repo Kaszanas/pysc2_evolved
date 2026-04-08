@@ -1,6 +1,6 @@
 [project]
 name = "pysc2_evolved"
-version = "0.1.0"
+version = "1.0.0"
 description = "Starcraft II environment and library for training agents."
 readme = "README.md"
 authors = [
@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [tool.commitizen]
-version = "0.1.0"
+version = "1.0.0"
 version_files = ["pyproject.toml:version", "MODULE.bazel:version"]
 
 [build-system]
