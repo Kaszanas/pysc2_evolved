@@ -47,13 +47,15 @@ jobs:
     # replace this job with a cibuildwheel manylinux build.
     # ──────────────────────────────────────────────────────────────────────────
     build-wheel:
-        name: Build wheel (${{ matrix.os }})
+        name: Build wheel (${{ matrix.os }}, py${{ matrix.python-version }})
         needs: [check-version]
         if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13", "3.14"]
                 include:
                     - os: ubuntu-latest
                       ext: so
@@ -68,8 +70,9 @@ jobs:
               uses: ./.github/actions/build-wheel
               with:
                   ext: ${{ matrix.ext }}
-                  artifact-name: wheel-${{ matrix.os }}
+                  artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
                   bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+                  python-version: ${{ matrix.python-version }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Build a pure-Python source distribution (sdist).
@@ -103,7 +106,7 @@ jobs:
     # native extensions are always verified before any publishing step.
     # ──────────────────────────────────────────────────────────────────────────
     verify-wheel:
-        name: Verify wheel install (${{ matrix.os }})
+        name: Verify wheel install (${{ matrix.os }}, py${{ matrix.python-version }})
         needs: [build-wheel]
         if: always() && needs.build-wheel.result == 'success'
         runs-on: ${{ matrix.os }}
@@ -111,6 +114,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13", "3.14"]
 
         steps:
             - name: Check-out repository
@@ -119,7 +123,8 @@ jobs:
             - name: Verify wheel
               uses: ./.github/actions/verify-wheel
               with:
-                  artifact-name: wheel-${{ matrix.os }}
+                  artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Publish all wheels + sdist to TestPyPI first.
@@ -134,17 +139,12 @@ jobs:
             id-token: write
 
         steps:
-            - name: Download Linux wheel
+            - name: Download all wheels
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
               with:
-                  name: wheel-ubuntu-latest
+                  pattern: wheel-*
                   path: dist
-
-            - name: Download Windows wheel
-              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-              with:
-                  name: wheel-windows-latest
-                  path: dist
+                  merge-multiple: true
 
             - name: Download sdist
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -204,17 +204,12 @@ jobs:
             id-token: write
 
         steps:
-            - name: Download Linux wheel
+            - name: Download all wheels
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
               with:
-                  name: wheel-ubuntu-latest
+                  pattern: wheel-*
                   path: dist
-
-            - name: Download Windows wheel
-              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-              with:
-                  name: wheel-windows-latest
-                  path: dist
+                  merge-multiple: true
 
             - name: Download sdist
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -265,17 +260,12 @@ jobs:
             contents: write
 
         steps:
-            - name: Download Linux wheel
+            - name: Download all wheels
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
               with:
-                  name: wheel-ubuntu-latest
+                  pattern: wheel-*
                   path: dist
-
-            - name: Download Windows wheel
-              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-              with:
-                  name: wheel-windows-latest
-                  path: dist
+                  merge-multiple: true
 
             - name: Download sdist
               uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

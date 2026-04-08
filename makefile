@@ -77,10 +77,9 @@ bazel_build_uint8_lookup_local: ## Builds the uint8_lookup pybind11 extension lo
 .PHONY: bazel_build_extensions_local
 bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local ## Builds both pybind11 extensions (converter + uint8_lookup) locally via Bazelisk.
 
-# ─── Wheel packaging ─────────────────────────────────────────────────────────
+# Wheel packaging 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make copy_extensions_local EXT=so
-
 .PHONY: copy_extensions_local
 copy_extensions_local: ## Copies compiled extensions into the source tree. Requires EXT=so|pyd.
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
@@ -92,15 +91,14 @@ copy_extensions_local: ## Copies compiled extensions into the source tree. Requi
 build_wheel_local: ## Builds a platform-specific wheel via uv.
 	uv build --wheel
 
-# ─── Wheel verification ──────────────────────────────────────────────────────
-
+# Wheel verification targets:
 .PHONY: smoke_test_local
 smoke_test_local: ## Verifies pybind11 extensions are importable and execute C++ code.
-	python scripts/smoke_test_converter.py
+	uv run python scripts/smoke_test_converter.py
 
 .PHONY: install_wheel_local
 install_wheel_local: ## Installs the wheel from dist/ into the current Python environment.
-	pip install dist/*.whl
+	uv pip install dist/*.whl
 
 .PHONY: verify_wheel_local
 verify_wheel_local: install_wheel_local smoke_test_local ## Installs wheel from dist/ and runs smoke test.
