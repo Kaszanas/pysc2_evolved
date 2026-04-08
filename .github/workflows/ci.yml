@@ -48,7 +48,47 @@ jobs:
             # - name: Build documentation
             #   run: uv run make html --directory docs/
 
-    bazel-converter-windows:
+    # ──────────────────────────────────────────────────────────────────────────
+    # Compile C++ extensions with Bazel and run C++ unit tests.
+    # No Python version matrix here — C++ compilation is Python-independent.
+    # The compiled binaries are uploaded as an artifact for the packaging jobs.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-cc-windows:
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
+        runs-on: windows-latest
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
+              with:
+                  ext: pyd
+                  artifact-name: cc-windows
+                  bazel-disk-cache: ${{ github.workflow }}-windows
+
+    build-cc-linux:
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
+              with:
+                  ext: so
+                  artifact-name: cc-linux
+                  bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Package platform-specific wheels for each supported Python version.
+    # Downloads the pre-built C++ artifact — no Bazel compilation here.
+    # ──────────────────────────────────────────────────────────────────────────
+    package-wheel-windows:
+        needs: [build-cc-windows]
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
         runs-on: windows-latest
         strategy:
@@ -60,32 +100,16 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            # Installs Bazelisk and wires up Bazel disk + repository caching.
-            # Pin this action to a SHA once a stable release is confirmed.
-            - name: Set up Bazel
-              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
-              with:
-                  bazelisk-cache: true
-                  disk-cache: ${{ github.workflow }}-windows
-                  repository-cache: true
-
-            - name: Build C++ converter extension
-              run: make bazel_build_converter_local
-
-            - name: Run C++ converter unit tests
-              run: make bazel_test_converter_local
-
-            # Reuse the build-wheel action — Bazel is already set up above so
-            # the bazelisk build steps will be instant cache hits.
-            - name: Build and upload wheel
+            - name: Package wheel
               uses: ./.github/actions/build-wheel
               with:
                   ext: pyd
                   artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
-                  bazel-disk-cache: ${{ github.workflow }}-windows
+                  cc-artifact-name: cc-windows
                   python-version: ${{ matrix.python-version }}
 
-    build-wheel-linux:
+    package-wheel-linux:
+        needs: [build-cc-linux]
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
         runs-on: ubuntu-latest
         strategy:
@@ -97,32 +121,17 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            - name: Set up Bazel
-              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
-              with:
-                  bazelisk-cache: true
-                  disk-cache: ${{ github.workflow }}-ubuntu-latest
-                  repository-cache: true
-
-            - name: Build C++ converter extension
-              run: make bazel_build_converter_local
-
-            - name: Run C++ converter unit tests
-              run: make bazel_test_converter_local
-
-            # Bazel is already set up above; the build steps in the action are
-            # instant cache hits.
-            - name: Build and upload wheel
+            - name: Package wheel
               uses: ./.github/actions/build-wheel
               with:
                   ext: so
                   artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
-                  bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest
+                  cc-artifact-name: cc-linux
                   python-version: ${{ matrix.python-version }}
 
     verify-wheel:
-        needs: [bazel-converter-windows, build-wheel-linux]
-        if: always() && needs.bazel-converter-windows.result == 'success' && needs.build-wheel-linux.result == 'success'
+        needs: [package-wheel-windows, package-wheel-linux]
+        if: always() && needs.package-wheel-windows.result == 'success' && needs.package-wheel-linux.result == 'success'
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false

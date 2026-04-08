@@ -1,53 +1,49 @@
 name: Build wheel
 description: >
-  Build pybind11 extensions with Bazel, copy them into the source tree,
-  and package a platform-specific wheel with uv.  Uploads the wheel as a
-  GitHub Actions artifact under the given name.
+    Download pre-built C++ extensions from a CI artifact, copy them into the
+    source tree, and package a platform-specific wheel with uv.  No Bazel
+    compilation happens here — compilation is handled by the build-cc action.
+    Uploads the resulting wheel as a GitHub Actions artifact.
 
 inputs:
-  ext:
-    description: Compiled extension suffix — "so" (Linux) or "pyd" (Windows)
-    required: true
-  artifact-name:
-    description: Name for the uploaded wheel artifact
-    required: true
-  bazel-disk-cache:
-    description: Bazel disk-cache key passed to bazel-contrib/setup-bazel
-    required: true
-  python-version:
-    description: Python version to install via uv
-    required: false
-    default: "3.11"
+    ext:
+        description: Compiled extension suffix — "so" (Linux/macOS) or "pyd" (Windows)
+        required: true
+    artifact-name:
+        description: Name for the uploaded wheel artifact
+        required: true
+    cc-artifact-name:
+        description: Name of the C++ extensions artifact produced by the build-cc action
+        required: true
+    python-version:
+        description: Python version to use for wheel packaging
+        required: false
+        default: "3.11"
 
 runs:
-  using: composite
-  steps:
-    - name: Set up Bazel
-      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
-      with:
-        bazelisk-cache: true
-        disk-cache: ${{ inputs.bazel-disk-cache }}
-        repository-cache: true
+    using: composite
+    steps:
+        - name: Install uv
+          uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+          with:
+              python-version: ${{ inputs.python-version }}
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
-      with:
-        python-version: ${{ inputs.python-version }}
+        - name: Download compiled extensions
+          uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+          with:
+              name: ${{ inputs.cc-artifact-name }}
+              path: cc-dist
 
-    - name: Build pybind11 extensions
-      shell: bash
-      run: make bazel_build_extensions_local
+        - name: Copy extensions into source tree
+          shell: bash
+          run: make place_extensions_local EXT=${{ inputs.ext }} SRCDIR=cc-dist
 
-    - name: Copy extensions into source tree
-      shell: bash
-      run: make copy_extensions_local EXT=${{ inputs.ext }}
+        - name: Build wheel
+          shell: bash
+          run: make build_wheel_local
 
-    - name: Build wheel
-      shell: bash
-      run: make build_wheel_local
-
-    - name: Upload wheel
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
-      with:
-        name: ${{ inputs.artifact-name }}
-        path: dist/*.whl
+        - name: Upload wheel
+          uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+          with:
+              name: ${{ inputs.artifact-name }}
+              path: dist/*.whl
