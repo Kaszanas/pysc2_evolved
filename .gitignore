@@ -11,3 +11,7 @@ versions.txt
 bazel/google/
 
 CLAUDE.md
+
+*.pyd
+*.so
+
