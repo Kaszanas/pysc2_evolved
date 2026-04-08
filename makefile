@@ -36,6 +36,11 @@ docker_run_dev: ## Runs the dev container, mounting the repo as /workspace.
 BAZELISK ?= bazelisk
 BAZEL_FLAGS =
 
+# Python version to target when compiling pybind11 extensions.
+# Override on the command line: make bazel_build_extensions_local PY_VERSION=3.12
+PY_VERSION ?= 3.11
+BAZEL_PY_FLAG = --@rules_python//python/config_settings:python_version=$(PY_VERSION)
+
 .PHONY: bazel_build_converter
 bazel_build_converter: ## Builds the C++ converter pybind11 extension inside the dev container.
 	docker run --rm \
@@ -47,7 +52,7 @@ bazel_build_converter: ## Builds the C++ converter pybind11 extension inside the
 
 .PHONY: bazel_build_converter_local
 bazel_build_converter_local: ## Builds the C++ converter pybind11 extension locally via Bazelisk.
-	$(BAZELISK) build $(BAZEL_FLAGS) \
+	$(BAZELISK) build $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) \
 	//src/pysc2_evolved/env/converter/cc/python:converter
 
 .PHONY: bazel_test_converter
@@ -62,16 +67,16 @@ bazel_test_converter: ## Runs all C++ converter unit tests inside the dev contai
 
 .PHONY: bazel_test_converter_local
 bazel_test_converter_local: ## Runs all C++ converter unit tests locally via Bazelisk.
-	$(BAZELISK) test $(BAZEL_FLAGS) //src/pysc2_evolved/env/converter/cc:all \
+	$(BAZELISK) test $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) //src/pysc2_evolved/env/converter/cc:all \
 		--test_output=errors
 
 .PHONY: bazel_build_all_local
 bazel_build_all_local: ## Builds all Bazel targets locally via Bazelisk.
-	$(BAZELISK) build $(BAZEL_FLAGS) //src/pysc2_evolved/...
+	$(BAZELISK) build $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) //src/pysc2_evolved/...
 
 .PHONY: bazel_build_uint8_lookup_local
 bazel_build_uint8_lookup_local: ## Builds the uint8_lookup pybind11 extension locally via Bazelisk.
-	$(BAZELISK) build $(BAZEL_FLAGS) \
+	$(BAZELISK) build $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) \
 	//src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
 
 .PHONY: bazel_build_extensions_local

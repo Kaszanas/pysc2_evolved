@@ -1,44 +1,48 @@
 name: Build C++ extensions
 description: >
-    Compile both pybind11 C++ extensions (converter + uint8_lookup) with Bazel,
-    run the C++ unit tests, stage the compiled binaries into cc-dist/, and upload
-    them as a GitHub Actions artifact for downstream wheel-packaging jobs.
+  Compile both pybind11 C++ extensions (converter + uint8_lookup) with Bazel,
+  run the C++ unit tests, stage the compiled binaries into cc-dist/, and upload
+  them as a GitHub Actions artifact for downstream wheel-packaging jobs.
 
 inputs:
-    ext:
-        description: Compiled extension suffix — "so" (Linux/macOS) or "pyd" (Windows)
-        required: true
-    artifact-name:
-        description: Name for the uploaded C++ extension artifact
-        required: true
-    bazel-disk-cache:
-        description: Bazel disk-cache key passed to bazel-contrib/setup-bazel
-        required: true
+  ext:
+    description: Compiled extension suffix — "so" (Linux/macOS) or "pyd" (Windows)
+    required: true
+  artifact-name:
+    description: Name for the uploaded C++ extension artifact
+    required: true
+  bazel-disk-cache:
+    description: Bazel disk-cache key passed to bazel-contrib/setup-bazel
+    required: true
+  python-version:
+    description: Python version to compile the pybind11 extensions against
+    required: false
+    default: "3.11"
 
 runs:
-    using: composite
-    steps:
-        - name: Set up Bazel
-          uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
-          with:
-              bazelisk-cache: true
-              disk-cache: ${{ inputs.bazel-disk-cache }}
-              repository-cache: true
+  using: composite
+  steps:
+    - name: Set up Bazel
+      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ inputs.bazel-disk-cache }}
+        repository-cache: true
 
-        - name: Build C++ extensions
-          shell: bash
-          run: make bazel_build_extensions_local
+    - name: Build C++ extensions
+      shell: bash
+      run: make bazel_build_extensions_local PY_VERSION=${{ inputs.python-version }}
 
-        - name: Run C++ unit tests
-          shell: bash
-          run: make bazel_test_converter_local
+    - name: Run C++ unit tests
+      shell: bash
+      run: make bazel_test_converter_local PY_VERSION=${{ inputs.python-version }}
 
-        - name: Stage compiled extensions
-          shell: bash
-          run: make stage_extensions_local EXT=${{ inputs.ext }}
+    - name: Stage compiled extensions
+      shell: bash
+      run: make stage_extensions_local EXT=${{ inputs.ext }}
 
-        - name: Upload compiled extensions
-          uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
-          with:
-              name: ${{ inputs.artifact-name }}
-              path: cc-dist/
+    - name: Upload compiled extensions
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: cc-dist/
