@@ -12,12 +12,18 @@ on:
 env:
     TEST_WORKSPACE: ${{ github.workspace }}
 
+# Shared event filter — only the entry-point jobs need this; downstream jobs
+# inherit skip behaviour automatically from their `needs:` dependencies.
 jobs:
     code_quality:
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
-        # Set up operating system
+        if: >
+            github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'push' ||
+            github.event_name == 'pull_request' ||
+            (github.event_name == 'issue_comment' &&
+             github.event.comment.body == 'recheck ci' &&
+             github.event.comment.user.login == 'Kaszanas')
         runs-on: ubuntu-latest
-
         steps:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -25,110 +31,73 @@ jobs:
             - name: Install the latest version of uv
               uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
 
-            # Installing only development dependencies (for pre-commit)
             - name: Install development dependencies
               run: uv sync --only-dev
 
-            # Code quality checks:
             - name: Initialize pre-commit
               run: uvx pre-commit install
             - name: Run pre-commit on all files.
               run: uvx pre-commit run --all-files
 
-            # Run tests:
             - name: Install all dependencies
               run: uv sync --all-extras
-            # - name: Install all dependencies
-            #   run: uv pip install -e .
-            # - name: Run tests
-            #   run: uv run pytest --ignore-glob='test_*.py' ./tests/test_cases/ --cov=sc2_datasets --cov-report term-missing --cov-report html --cov-report xml 2>&1
 
-            # TODO: This may be ran in docker:
-            # See if the documentation builds correctly:
-            # - name: Build documentation
-            #   run: uv run make html --directory docs/
-
-    bazel-converter-windows:
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
+    # ──────────────────────────────────────────────────────────────────────────
+    # Windows pipeline: compile → package → verify (fully independent of Linux)
+    # ──────────────────────────────────────────────────────────────────────────
+    build-cc-windows:
+        if: >
+            github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'push' ||
+            github.event_name == 'pull_request' ||
+            (github.event_name == 'issue_comment' &&
+             github.event.comment.body == 'recheck ci' &&
+             github.event.comment.user.login == 'Kaszanas')
         runs-on: windows-latest
         strategy:
             fail-fast: false
             matrix:
-                python-version: ["3.11", "3.12", "3.13", "3.14"]
+                python-version: ["3.11", "3.12", "3.13"]
 
         steps:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            # Installs Bazelisk and wires up Bazel disk + repository caching.
-            # Pin this action to a SHA once a stable release is confirmed.
-            - name: Set up Bazel
-              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
               with:
-                  bazelisk-cache: true
-                  disk-cache: ${{ github.workflow }}-windows
-                  repository-cache: true
+                  ext: pyd
+                  artifact-name: cc-windows-py${{ matrix.python-version }}
+                  bazel-disk-cache: ${{ github.workflow }}-windows-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
 
-            - name: Build C++ converter extension
-              run: make bazel_build_converter_local
+    package-wheel-windows:
+        needs: [build-cc-windows]
+        runs-on: windows-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
 
-            - name: Run C++ converter unit tests
-              run: make bazel_test_converter_local
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            # Reuse the build-wheel action — Bazel is already set up above so
-            # the bazelisk build steps will be instant cache hits.
-            - name: Build and upload wheel
+            - name: Package wheel
               uses: ./.github/actions/build-wheel
               with:
                   ext: pyd
                   artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
-                  bazel-disk-cache: ${{ github.workflow }}-windows
+                  cc-artifact-name: cc-windows-py${{ matrix.python-version }}
                   python-version: ${{ matrix.python-version }}
 
-    build-wheel-linux:
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == 'recheck ci' && github.event.comment.user.login == 'Kaszanas')
-        runs-on: ubuntu-latest
+    verify-wheel-windows:
+        needs: [package-wheel-windows]
+        runs-on: windows-latest
         strategy:
             fail-fast: false
             matrix:
-                python-version: ["3.11", "3.12", "3.13", "3.14"]
-
-        steps:
-            - name: Check-out repository
-              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-            - name: Set up Bazel
-              uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86
-              with:
-                  bazelisk-cache: true
-                  disk-cache: ${{ github.workflow }}-ubuntu-latest
-                  repository-cache: true
-
-            - name: Build C++ converter extension
-              run: make bazel_build_converter_local
-
-            - name: Run C++ converter unit tests
-              run: make bazel_test_converter_local
-
-            # Bazel is already set up above; the build steps in the action are
-            # instant cache hits.
-            - name: Build and upload wheel
-              uses: ./.github/actions/build-wheel
-              with:
-                  ext: so
-                  artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
-                  bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest
-                  python-version: ${{ matrix.python-version }}
-
-    verify-wheel:
-        needs: [bazel-converter-windows, build-wheel-linux]
-        if: always() && needs.bazel-converter-windows.result == 'success' && needs.build-wheel-linux.result == 'success'
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest]
-                python-version: ["3.11", "3.12", "3.13", "3.14"]
+                python-version: ["3.11", "3.12", "3.13"]
 
         steps:
             - name: Check-out repository
@@ -137,5 +106,72 @@ jobs:
             - name: Verify wheel
               uses: ./.github/actions/verify-wheel
               with:
-                  artifact-name: ci-wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+                  artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Linux pipeline: compile → package → verify (fully independent of Windows)
+    # ──────────────────────────────────────────────────────────────────────────
+    build-cc-linux:
+        if: >
+            github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'push' ||
+            github.event_name == 'pull_request' ||
+            (github.event_name == 'issue_comment' &&
+             github.event.comment.body == 'recheck ci' &&
+             github.event.comment.user.login == 'Kaszanas')
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
+              with:
+                  ext: so
+                  artifact-name: cc-linux-py${{ matrix.python-version }}
+                  bazel-disk-cache: ${{ github.workflow }}-ubuntu-latest-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    package-wheel-linux:
+        needs: [build-cc-linux]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Package wheel
+              uses: ./.github/actions/build-wheel
+              with:
+                  ext: so
+                  artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-linux-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    verify-wheel-linux:
+        needs: [package-wheel-linux]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Verify wheel
+              uses: ./.github/actions/verify-wheel
+              with:
+                  artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
                   python-version: ${{ matrix.python-version }}

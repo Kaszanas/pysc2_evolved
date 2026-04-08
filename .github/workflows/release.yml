@@ -31,31 +31,18 @@ jobs:
                   echo "OK: tag ${GITHUB_REF_NAME} matches pyproject.toml version ${PKG_VERSION}"
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Build a platform-specific wheel on each target OS.
-    #
-    # Steps per platform:
-    #   1. Build pybind11 extensions with Bazel (converter + uint8_lookup).
-    #   2. Copy the compiled binary into the source tree so hatchling picks
-    #      it up when building the wheel.
-    #   3. Run `uv build --wheel`.  The hatch_build.py hook sets
-    #      pure_python = False, causing hatchling to emit a CPython/platform
-    #      tagged wheel (e.g. cp311-cp311-linux_x86_64.whl) that includes
-    #      the .so / .pyd extension.
-    #
-    # NOTE: The Linux wheel is tagged linux_x86_64 (not manylinux).  It works
-    # for direct pip installs and GitHub Releases.  For PyPI publishing,
-    # replace this job with a cibuildwheel manylinux build.
+    # Compile C++ extensions with Bazel and run C++ unit tests.
+    # No Python version matrix — C++ compilation is Python-independent.
+    # Compiled binaries are uploaded as artifacts for the packaging jobs below.
     # ──────────────────────────────────────────────────────────────────────────
-    build-wheel:
-        name: Build wheel (${{ matrix.os }}, py${{ matrix.python-version }})
+    build-cc:
+        name: Build C++ extensions (${{ matrix.os }})
         needs: [check-version]
         if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest]
-                python-version: ["3.11", "3.12", "3.13", "3.14"]
                 include:
                     - os: ubuntu-latest
                       ext: so
@@ -66,12 +53,47 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            - name: Build and upload wheel
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
+              with:
+                  ext: ${{ matrix.ext }}
+                  artifact-name: cc-${{ matrix.os }}
+                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Package a platform-specific wheel for each supported Python version.
+    # Downloads the pre-built C++ artifact — no Bazel compilation here.
+    #
+    # NOTE: The Linux wheel is tagged linux_x86_64 (not manylinux).  It works
+    # for direct pip installs and GitHub Releases.  For PyPI publishing,
+    # replace this job with a cibuildwheel manylinux build.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-wheel:
+        name: Build wheel (${{ matrix.os }}, py${{ matrix.python-version }})
+        needs: [build-cc]
+        if: always() && needs.build-cc.result == 'success'
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+                include:
+                    - os: ubuntu-latest
+                      ext: so
+                    - os: windows-latest
+                      ext: pyd
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Package wheel
               uses: ./.github/actions/build-wheel
               with:
                   ext: ${{ matrix.ext }}
                   artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
-                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+                  cc-artifact-name: cc-${{ matrix.os }}
                   python-version: ${{ matrix.python-version }}
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -114,7 +136,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
-                python-version: ["3.11", "3.12", "3.13", "3.14"]
+                python-version: ["3.11", "3.12", "3.13"]
 
         steps:
             - name: Check-out repository
