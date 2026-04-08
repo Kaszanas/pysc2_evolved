@@ -28,6 +28,10 @@ dependencies = [
     "websocket-client>=1.8.0",
 ]
 
+[tool.commitizen]
+version = "0.1.0"
+version_files = ["pyproject.toml:version", "MODULE.bazel:version"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
