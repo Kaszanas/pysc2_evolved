@@ -114,7 +114,7 @@ build_wheel_local: ## Builds a platform-specific wheel via uv.
 # Wheel verification targets:
 .PHONY: smoke_test_local
 smoke_test_local: ## Verifies pybind11 extensions are importable and execute C++ code.
-	uv run python scripts/smoke_test_converter.py
+	uv run --no-project python scripts/smoke_test_converter.py
 
 .PHONY: install_wheel_local
 install_wheel_local: ## Installs the wheel from dist/ into the current Python environment.
