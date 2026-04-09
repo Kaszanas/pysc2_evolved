@@ -42,121 +42,115 @@ STABLEID_URL = (
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 UNITS_PROTO = (
-    REPO_ROOT
-    / "src/pysc2_evolved/env/converter/cc/game_data/proto/units.proto"
+    REPO_ROOT / "src/pysc2_evolved/env/converter/cc/game_data/proto/units.proto"
 )
 BUFFS_PROTO = (
-    REPO_ROOT
-    / "src/pysc2_evolved/env/converter/cc/game_data/proto/buffs.proto"
+    REPO_ROOT / "src/pysc2_evolved/env/converter/cc/game_data/proto/buffs.proto"
 )
 UPGRADES_PROTO = (
-    REPO_ROOT
-    / "src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades.proto"
+    REPO_ROOT / "src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades.proto"
 )
 UNITS_PY = REPO_ROOT / "src/pysc2_evolved/lib/units.py"
 UINT8_LOOKUP_CC = (
-    REPO_ROOT
-    / "src/pysc2_evolved/env/converter/cc/game_data/uint8_lookup.cc"
+    REPO_ROOT / "src/pysc2_evolved/env/converter/cc/game_data/uint8_lookup.cc"
 )
 STATIC_DATA_PY = REPO_ROOT / "src/pysc2_evolved/lib/static_data.py"
 
 RACES = ["Neutral", "Protoss", "Terran", "Zerg"]
 
-# ---------------------------------------------------------------------------
+
 # Non-melee unit filter
 #
 # stableid.json includes campaign, co-op, and debug units that should not be
 # added to the melee lookup tables.  Any unit whose name contains one of the
 # substrings below (or starts with one of the prefixes) is treated as
 # non-melee and skipped.  Pass --include-all to disable this filter.
-# ---------------------------------------------------------------------------
-
 _NON_MELEE_SUBSTRINGS = [
-    "Dummy",            # test / animation dummies
-    "ACGluescreen",     # co-op glue-screen animations
-    "ACGlue",           # same family
-    "Placeholder",      # internal placeholders
-    "CoOp",             # co-op specific
-    "_Caverns_",        # XelNaga Caverns campaign level
-    "TempleDoor",       # campaign doors
-    "TemplePortal",     # campaign portals
-    "Prison",           # campaign prison structures (XelNagaPrison*)
-    "Fireworks",        # campaign event effects
-    "RedstoneLava",     # campaign map (Outbreak)
+    "Dummy",  # test / animation dummies
+    "ACGluescreen",  # co-op glue-screen animations
+    "ACGlue",  # same family
+    "Placeholder",  # internal placeholders
+    "CoOp",  # co-op specific
+    "_Caverns_",  # XelNaga Caverns campaign level
+    "TempleDoor",  # campaign doors
+    "TemplePortal",  # campaign portals
+    "Prison",  # campaign prison structures (XelNagaPrison*)
+    "Fireworks",  # campaign event effects
+    "RedstoneLava",  # campaign map (Outbreak)
     "StereoscopicOptions",  # debug unit
     "System_Snapshot",  # debug unit
     "WreckedBattlecruiser",  # campaign cinematic piece
-    "LightBridge",      # campaign bridge prop
-    "SILiberator",      # co-op Stukov liberator
-    "Zagara",           # co-op commander units
-    "Fenix",            # co-op commander units
-    "Stukov",           # co-op commander units
-    "Vorazun",          # co-op commander units
-    "Karax",            # co-op commander units (NB: "Karak" prefix is OK, "Karax" is co-op)
-    "Alarak",           # co-op commander units
-    "Dehaka",           # co-op commander units
-    "Abathur",          # co-op commander units
-    "Artanis",          # co-op commander units
-    "Swann",            # co-op commander units
-    "Raynor",           # co-op commander units
-    "Mengsk",           # co-op commander units
-    "Horner",           # co-op commander units
-    "Tychus",           # co-op commander units
-    "HanAndHorner",     # co-op commander units
-    "Kerrigan",         # co-op commander units (beyond standard GhostNova)
-    "Missile",          # internal projectile entities (FungalGrowthMissile, etc.)
-    "Tentacle",         # internal projectile/visual effects
-    "PathingBlocker",   # internal pathing helpers
-    "CreepBlocker",     # internal creep pathing
-    "HelperEmitter",    # debug visual helper
-    "MultiKill",        # achievement-tracking object
-    "CommentatorBot",   # AI commentary helpers
-    "RepulserField",    # campaign area-denial field
-    "DefenseWall",      # campaign-specific fortification props
-    "Campaign",         # explicit campaign-only units
-    "SkinPreview",      # cosmetic skin preview units
-    "Wreckage",         # destroyed unit cinematic props
-    "LaserLines",       # GhostLaserLines — visual effect unit
-    "Noodle",           # NukeNoodlesCommercial — campaign nuke effect
-    "HiveMind",         # HiveMindEmulator — campaign only
-    "SlotBag",          # campaign inventory bag items (4SlotBag, 10SlotBag, …)
-    "GenerateCreep",    # internal creep-generation keybind dummy
-    "Golfball",         # map editor test prop (ShapeGolfball)
-    "TrafficSignal",    # city map decoration
-    "Streetlight",      # city map decoration
-    "SearchLight",      # city map decoration
-    "Searchlight",      # city map decoration (alt capitalisation)
-    "Bullhorn",         # city map decoration
-    "SpacePlatformSign",    # space platform map decoration
-    "SpacePlatformBarrier", # space platform map decoration
-    "StoreFront",       # city map decoration
+    "LightBridge",  # campaign bridge prop
+    "SILiberator",  # co-op Stukov liberator
+    "Zagara",  # co-op commander units
+    "Fenix",  # co-op commander units
+    "Stukov",  # co-op commander units
+    "Vorazun",  # co-op commander units
+    "Karax",  # co-op commander units (NB: "Karak" prefix is OK, "Karax" is co-op)
+    "Alarak",  # co-op commander units
+    "Dehaka",  # co-op commander units
+    "Abathur",  # co-op commander units
+    "Artanis",  # co-op commander units
+    "Swann",  # co-op commander units
+    "Raynor",  # co-op commander units
+    "Mengsk",  # co-op commander units
+    "Horner",  # co-op commander units
+    "Tychus",  # co-op commander units
+    "HanAndHorner",  # co-op commander units
+    "Kerrigan",  # co-op commander units (beyond standard GhostNova)
+    "Missile",  # internal projectile entities (FungalGrowthMissile, etc.)
+    "Tentacle",  # internal projectile/visual effects
+    "PathingBlocker",  # internal pathing helpers
+    "CreepBlocker",  # internal creep pathing
+    "HelperEmitter",  # debug visual helper
+    "MultiKill",  # achievement-tracking object
+    "CommentatorBot",  # AI commentary helpers
+    "RepulserField",  # campaign area-denial field
+    "DefenseWall",  # campaign-specific fortification props
+    "Campaign",  # explicit campaign-only units
+    "SkinPreview",  # cosmetic skin preview units
+    "Wreckage",  # destroyed unit cinematic props
+    "LaserLines",  # GhostLaserLines — visual effect unit
+    "Noodle",  # NukeNoodlesCommercial — campaign nuke effect
+    "HiveMind",  # HiveMindEmulator — campaign only
+    "SlotBag",  # campaign inventory bag items (4SlotBag, 10SlotBag, …)
+    "GenerateCreep",  # internal creep-generation keybind dummy
+    "Golfball",  # map editor test prop (ShapeGolfball)
+    "TrafficSignal",  # city map decoration
+    "Streetlight",  # city map decoration
+    "SearchLight",  # city map decoration
+    "Searchlight",  # city map decoration (alt capitalisation)
+    "Bullhorn",  # city map decoration
+    "SpacePlatformSign",  # space platform map decoration
+    "SpacePlatformBarrier",  # space platform map decoration
+    "StoreFront",  # city map decoration
     "BillboardScroll",  # scrolling billboard prop
-    "SignsDirection",   # directional sign prop
-    "SignsConstruct",   # construction sign prop
-    "SignsFunny",       # funny sign prop
-    "SignsIcons",       # icon sign prop
-    "SignsWarning",     # warning sign prop
-    "Garage",           # city map prop (Destructible Garage)
-    "WolfStatue",       # map deco prop
-    "GlobeStatue",      # map deco prop
-    "PurifierBlast",    # campaign visual effect
+    "SignsDirection",  # directional sign prop
+    "SignsConstruct",  # construction sign prop
+    "SignsFunny",  # funny sign prop
+    "SignsIcons",  # icon sign prop
+    "SignsWarning",  # warning sign prop
+    "Garage",  # city map prop (Destructible Garage)
+    "WolfStatue",  # map deco prop
+    "GlobeStatue",  # map deco prop
+    "PurifierBlast",  # campaign visual effect
     "NagaHealingShrine",  # campaign shrine (XelNagaHealingShrine)
-    "NagaShrine",       # campaign shrine
-    "NagaTemple",       # campaign temple
-    "NagaVault",        # campaign vault
-    "NagaWorldship",    # campaign worldship
+    "NagaShrine",  # campaign shrine
+    "NagaTemple",  # campaign temple
+    "NagaVault",  # campaign vault
+    "NagaWorldship",  # campaign worldship
 ]
 
 _NON_MELEE_PREFIXES = [
-    "Item",             # campaign items (ItemGravityBombs, ItemMedkit, …)
-    "Ball",             # the single test unit named exactly "Ball"
-    "Beacon",           # army-command rally beacon helpers
-    "Shape",            # geometry test shapes (ShapeGolfball, ShapeSphere, …)
-    "AutoTest",         # automated test helpers
-    "BraxisAlpha",      # Braxis Holdout map-specific destructibles
-    "Ursadak",          # non-melee exotic critters
-    "Karak",            # non-melee critters (KarakMale, etc.)
-                        # Note: KarakFemale IS in proto but as a redundant-unit alias
+    "Item",  # campaign items (ItemGravityBombs, ItemMedkit, …)
+    "Ball",  # the single test unit named exactly "Ball"
+    "Beacon",  # army-command rally beacon helpers
+    "Shape",  # geometry test shapes (ShapeGolfball, ShapeSphere, …)
+    "AutoTest",  # automated test helpers
+    "BraxisAlpha",  # Braxis Holdout map-specific destructibles
+    "Ursadak",  # non-melee exotic critters
+    "Karak",  # non-melee critters (KarakMale, etc.)
+    # Note: KarakFemale IS in proto but as a redundant-unit alias
 ]
 
 # KarakFemale is a special case: it IS in units.proto (used as redundant-unit target),
@@ -164,23 +158,25 @@ _NON_MELEE_PREFIXES = [
 # New Karak variants (KarakMale, etc.) are filtered out by the "Karak" prefix above.
 
 _NON_MELEE_SUFFIXES = [
-    "Weapon",           # internal weapon/projectile entities
-    "LMWeapon",         # LM-variant weapon projectiles
-    "WeaponM2",         # multipart weapon projectiles
+    "Weapon",  # internal weapon/projectile entities
+    "LMWeapon",  # LM-variant weapon projectiles
+    "WeaponM2",  # multipart weapon projectiles
     "WeaponM3",
-    "ReleaseMissile",   # larva / unit release projectiles
-    "ReleaseWeapon",    # same family
-    "Placement",        # build placement helpers (ReaperPlacement, …)
-    "Keybind",          # internal keybind dummies
+    "ReleaseMissile",  # larva / unit release projectiles
+    "ReleaseWeapon",  # same family
+    "Placement",  # build placement helpers (ReaperPlacement, …)
+    "Keybind",  # internal keybind dummies
 ]
 
 # Units whose exact names are non-melee singletons.
-_NON_MELEE_EXACT = frozenset([
-    "Ursadon",              # campaign critter
-    "Sheep",                # decorative critter
-    "Cow",                  # decorative critter
-    "FungalGrowthMissile",  # covered by Missile substring, listed for clarity
-])
+_NON_MELEE_EXACT = frozenset(
+    [
+        "Ursadon",  # campaign critter
+        "Sheep",  # decorative critter
+        "Cow",  # decorative critter
+        "FungalGrowthMissile",  # covered by Missile substring, listed for clarity
+    ]
+)
 
 
 def is_melee_candidate(name: str) -> bool:
@@ -228,11 +224,7 @@ NEUTRAL_KEYWORDS = [
 ]
 
 
-# ---------------------------------------------------------------------------
 # stableid.json loading
-# ---------------------------------------------------------------------------
-
-
 def fetch_stableid(path: Optional[Path]) -> dict:
     """Load stableid.json from a local file or the internet."""
     if path is not None:
@@ -243,11 +235,7 @@ def fetch_stableid(path: Optional[Path]) -> dict:
         return json.loads(resp.read())
 
 
-# ---------------------------------------------------------------------------
 # Proto parsing helpers
-# ---------------------------------------------------------------------------
-
-
 def parse_units_proto(proto_path: Path) -> Dict[int, Tuple[str, str]]:
     """Return {id: (name, race)} from all enums in units.proto."""
     text = proto_path.read_text()
@@ -301,11 +289,7 @@ def parse_single_enum(proto_path: Path, enum_name: str) -> Dict[int, str]:
     return result
 
 
-# ---------------------------------------------------------------------------
 # Race classification
-# ---------------------------------------------------------------------------
-
-
 def _build_known_names(existing: Dict[int, Tuple[str, str]]) -> Dict[str, str]:
     """Return {unit_name: race} from already-classified units."""
     return {name: race for name, race in existing.values()}
@@ -368,11 +352,7 @@ def classify_unit(
     return "Neutral"
 
 
-# ---------------------------------------------------------------------------
 # kUnitsList parsing
-# ---------------------------------------------------------------------------
-
-
 def parse_kunits_list(cc_path: Path) -> List[Tuple[str, str]]:
     """Return ordered list of (race, name) from kUnitsList in uint8_lookup.cc."""
     text = cc_path.read_text()
@@ -418,11 +398,7 @@ def parse_redundant_keys(cc_path: Path) -> Set[Tuple[str, str]]:
     return keys
 
 
-# ---------------------------------------------------------------------------
 # File updaters
-# ---------------------------------------------------------------------------
-
-
 def update_units_proto(
     proto_path: Path,
     classified: Dict[int, Tuple[str, str]],
@@ -534,7 +510,7 @@ def _is_valid_identifier(name: str) -> bool:
     return bool(_IDENTIFIER_RE.match(name))
 
 
-_DIGIT_PREFIX_RE = re.compile(r'^(\d+(?:mm)?)(.+)$')
+_DIGIT_PREFIX_RE = re.compile(r"^(\d+(?:mm)?)(.+)$")
 
 
 def _safe_name(name: str) -> str:
@@ -606,7 +582,9 @@ def update_units_py(
     return max(added, 0)
 
 
-def _is_family_member(name: str, existing_entries: List[Tuple[str, str]], min_prefix: int = 10) -> bool:
+def _is_family_member(
+    name: str, existing_entries: List[Tuple[str, str]], min_prefix: int = 10
+) -> bool:
     """Return True if *name* shares >= *min_prefix* leading chars with any existing entry."""
     for _, ename in existing_entries:
         count = 0
@@ -667,11 +645,7 @@ def update_uint8_lookup_cc(
         all_lines.append(f"    {race}::{name},  // {uid}")
 
     array_body = "\n".join(all_lines)
-    new_array = (
-        f"std::array<int, {new_size}> kUnitsList = {{{{\n"
-        f"{array_body}\n"
-        f"}}}};"
-    )
+    new_array = f"std::array<int, {new_size}> kUnitsList = {{{{\n{array_body}\n}}}};"
 
     new_text = re.sub(
         r"std::array<int,\s*\d+>\s*kUnitsList\s*=\s*\{\{.*?\}\};",
@@ -794,22 +768,25 @@ def update_upgrades_proto(
     merged = {**existing, **new_entries}
     text = proto_path.read_text()
     # Upgrades enum has no Unknown* sentinel.
-    pattern = rf"(enum Upgrades \{{)([^}}]*)(\}})"
+    pattern = r"(enum Upgrades \{)([^}]*)(\})"
     mm = re.search(pattern, text, re.DOTALL)
     if mm:
         lines = [f"  {merged[uid]} = {uid};" for uid in sorted(merged)]
         enum_body = "\n".join(lines) + "\n"
-        text = text[: mm.start()] + mm.group(1) + "\n" + enum_body + mm.group(3) + text[mm.end() :]
+        text = (
+            text[: mm.start()]
+            + mm.group(1)
+            + "\n"
+            + enum_body
+            + mm.group(3)
+            + text[mm.end() :]
+        )
     if not dry_run:
         proto_path.write_text(text)
     return len(new_entries)
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -914,7 +891,9 @@ def main() -> None:
         print("\nNo new units found.")
 
     existing_buffs = parse_single_enum(BUFFS_PROTO, "Buffs")
-    new_buffs = {uid: name for uid, name in stableid_buffs.items() if uid not in existing_buffs}
+    new_buffs = {
+        uid: name for uid, name in stableid_buffs.items() if uid not in existing_buffs
+    }
     if new_buffs:
         print(f"\nNew buffs to add ({len(new_buffs)}):")
         for uid, name in sorted(new_buffs.items()):
@@ -922,7 +901,9 @@ def main() -> None:
 
     existing_upgrades = parse_single_enum(UPGRADES_PROTO, "Upgrades")
     new_upgrades = {
-        uid: name for uid, name in stableid_upgrades.items() if uid not in existing_upgrades
+        uid: name
+        for uid, name in stableid_upgrades.items()
+        if uid not in existing_upgrades
     }
     if new_upgrades:
         print(f"\nNew upgrades to add ({len(new_upgrades)}):")
