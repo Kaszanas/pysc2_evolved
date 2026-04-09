@@ -24,6 +24,9 @@ class Neutral(enum.IntEnum):
     BattleStationMineralField750 = 887
     CarrionBird = 322
     CleaningBot = 612
+    CollapsiblePurifierTowerDebris = 747
+    CollapsiblePurifierTowerDiagonal = 882
+    CollapsiblePurifierTowerPushUnit = 798
     CollapsibleRockTower = 609
     CollapsibleRockTowerDebris = 490
     CollapsibleRockTowerDebrisRampLeft = 518
@@ -47,35 +50,99 @@ class Neutral(enum.IntEnum):
     DebrisRampLeft = 486
     DebrisRampRight = 487
     DestructibleBillboardTall = 350
+    DestructibleCityDebris2x4Horizontal = 625
+    DestructibleCityDebris2x4Vertical = 624
+    DestructibleCityDebris2x6Horizontal = 627
+    DestructibleCityDebris2x6Vertical = 626
     DestructibleCityDebris4x4 = 628
     DestructibleCityDebris6x6 = 629
     DestructibleCityDebrisHugeDiagonalBLUR = 630
+    DestructibleCityDebrisHugeDiagonalULBR = 631
     DestructibleDebris4x4 = 364
     DestructibleDebris6x6 = 365
     DestructibleDebrisRampDiagonalHugeBLUR = 377
     DestructibleDebrisRampDiagonalHugeULBR = 376
+    DestructibleExpeditionGate6x6 = 836
+    DestructibleGateDiagonalBLUR = 990
+    DestructibleGateDiagonalBLURLowered = 984
+    DestructibleGateDiagonalULBR = 991
+    DestructibleGateDiagonalULBRLowered = 985
+    DestructibleGateStraightHorizontal = 993
+    DestructibleGateStraightHorizontalBF = 992
+    DestructibleGateStraightHorizontalBFLowered = 986
+    DestructibleGateStraightHorizontalLowered = 987
+    DestructibleGateStraightVertical = 995
+    DestructibleGateStraightVerticalLF = 994
+    DestructibleGateStraightVerticalLFLowered = 988
+    DestructibleGateStraightVerticalLowered = 989
+    DestructibleIce2x4Horizontal = 645
+    DestructibleIce2x4Vertical = 644
+    DestructibleIce2x6Horizontal = 647
+    DestructibleIce2x6Vertical = 646
     DestructibleIce4x4 = 648
     DestructibleIce6x6 = 649
     DestructibleIceDiagonalHugeBLUR = 651
+    DestructibleIceDiagonalHugeULBR = 650
+    DestructibleIceHorizontalHuge = 653
+    DestructibleIceVerticalHuge = 652
+    DestructibleKorhalFlag = 1233
+    DestructibleKorhalFoliage = 1236
+    DestructibleKorhalPodium = 1234
+    DestructibleKorhalTree = 1235
     DestructibleRampDiagonalHugeBLUR = 373
     DestructibleRampDiagonalHugeULBR = 372
+    DestructibleRampHorizontalHuge = 375
+    DestructibleRampVerticalHuge = 374
+    DestructibleRock2x4Horizontal = 367
+    DestructibleRock2x4Vertical = 366
+    DestructibleRock2x6Horizontal = 369
+    DestructibleRock2x6Vertical = 368
+    DestructibleRock4x4 = 370
     DestructibleRock6x6 = 371
+    DestructibleRock6x6Weak = 613
+    DestructibleRockEx12x4Horizontal = 635
+    DestructibleRockEx12x4Vertical = 634
+    DestructibleRockEx12x6Horizontal = 637
+    DestructibleRockEx12x6Vertical = 636
     DestructibleRockEx14x4 = 638
     DestructibleRockEx16x6 = 639
     DestructibleRockEx1DiagonalHugeBLUR = 641
     DestructibleRockEx1DiagonalHugeULBR = 640
     DestructibleRockEx1HorizontalHuge = 643
     DestructibleRockEx1VerticalHuge = 642
+    DestructibleSandbags = 1237
+    DestructibleWallCorner45 = 1804
+    DestructibleWallCorner45BL90R = 1807
+    DestructibleWallCorner45BR90T = 1808
+    DestructibleWallCorner45UL90B = 1806
+    DestructibleWallCorner45ULBL = 1801
+    DestructibleWallCorner45ULUR = 1802
+    DestructibleWallCorner45UR90L = 1805
+    DestructibleWallCorner45URBR = 1803
+    DestructibleWallCorner90B45UR = 1812
+    DestructibleWallCorner90BR = 1814
+    DestructibleWallCorner90L45BR = 1809
+    DestructibleWallCorner90LB = 1815
+    DestructibleWallCorner90LT = 1816
+    DestructibleWallCorner90R45UL = 1811
+    DestructibleWallCorner90T45BL = 1810
+    DestructibleWallCorner90TR = 1813
+    DestructibleWallDiagonalBLUR = 1817
+    DestructibleWallDiagonalBLURLF = 1818
+    DestructibleWallDiagonalULBR = 1820
+    DestructibleWallDiagonalULBRLF = 1819
+    DestructibleWallStraightHorizontal = 1823
+    DestructibleWallStraightHorizontalBF = 1824
+    DestructibleWallStraightVertical = 1821
+    DestructibleWallVerticalLF = 1822
+    DestructibleZergInfestation3x3 = 837
     Dog = 336
-    InhibitorZoneMedium = 1958
-    InhibitorZoneSmall = 1957
-    KarakFemale = 324
+    InfestationSpire = 1751
     LabBot = 661
     LabMineralField = 665
     LabMineralField750 = 666
     Lyote = 321
     MineralField = 341
-    MineralField450 = 1961
     MineralField750 = 483
     ProtossVespeneGeyser = 608
     PurifierMineralField = 884
@@ -89,16 +156,60 @@ class Neutral(enum.IntEnum):
     RichVespeneGeyser = 344
     Scantipede = 335
     ShakurasVespeneGeyser = 881
+    SpacePlatformCliffDoor0 = 981
+    SpacePlatformCliffDoor1 = 983
+    SpacePlatformCliffDoorOpen0 = 980
+    SpacePlatformCliffDoorOpen1 = 982
+    SpacePlatformDestructibleJumboBlocker = 1205
+    SpacePlatformDestructibleLargeBlocker = 1206
+    SpacePlatformDestructibleMediumBlocker = 1207
+    SpacePlatformDestructibleSmallBlocker = 1208
     SpacePlatformGeyser = 343
+    SpacePlatformVentsUnit = 1752
     UnbuildableBricksDestructible = 473
+    UnbuildableBricksSmallUnit = 602
+    UnbuildableBricksUnit = 656
     UnbuildablePlatesDestructible = 474
+    UnbuildablePlatesSmallUnit = 603
+    UnbuildablePlatesUnit = 604
     UnbuildableRocksDestructible = 472
+    UnbuildableRocksSmallUnit = 605
+    UnbuildableRocksUnit = 657
     UtilityBot = 330
     VespeneGeyser = 342
+    XelNagaDestructibleBlocker6E = 1895
+    XelNagaDestructibleBlocker6N = 1897
+    XelNagaDestructibleBlocker6NE = 1896
+    XelNagaDestructibleBlocker6NW = 1898
+    XelNagaDestructibleBlocker6S = 1893
+    XelNagaDestructibleBlocker6SE = 1894
+    XelNagaDestructibleBlocker6SW = 1900
+    XelNagaDestructibleBlocker6W = 1899
+    XelNagaDestructibleBlocker8E = 1903
+    XelNagaDestructibleBlocker8N = 1905
     XelNagaDestructibleBlocker8NE = 1904
+    XelNagaDestructibleBlocker8NW = 1906
+    XelNagaDestructibleBlocker8S = 1901
+    XelNagaDestructibleBlocker8SE = 1902
     XelNagaDestructibleBlocker8SW = 1908
+    XelNagaDestructibleBlocker8W = 1907
+    XelNagaDestructibleRampBlocker6E = 863
+    XelNagaDestructibleRampBlocker6N = 865
+    XelNagaDestructibleRampBlocker6NE = 864
+    XelNagaDestructibleRampBlocker6NW = 866
+    XelNagaDestructibleRampBlocker6S = 861
+    XelNagaDestructibleRampBlocker6SE = 862
+    XelNagaDestructibleRampBlocker6SW = 868
+    XelNagaDestructibleRampBlocker6W = 867
+    XelNagaDestructibleRampBlocker8E = 871
+    XelNagaDestructibleRampBlocker8N = 873
+    XelNagaDestructibleRampBlocker8NE = 872
+    XelNagaDestructibleRampBlocker8NW = 874
+    XelNagaDestructibleRampBlocker8S = 869
+    XelNagaDestructibleRampBlocker8SE = 870
+    XelNagaDestructibleRampBlocker8SW = 876
+    XelNagaDestructibleRampBlocker8W = 875
     XelNagaTower = 149
-
 
 class Protoss(enum.IntEnum):
     """Protoss units."""
@@ -107,7 +218,6 @@ class Protoss(enum.IntEnum):
     AdeptPhaseShift = 801
     Archon = 141
     Assimilator = 61
-    AssimilatorRich = 1955
     Carrier = 79
     Colossus = 4
     CyberneticsCore = 72
@@ -149,7 +259,6 @@ class Protoss(enum.IntEnum):
     WarpPrismPhasing = 136
     Zealot = 73
 
-
 class Terran(enum.IntEnum):
     """Terran units."""
 
@@ -160,7 +269,10 @@ class Terran(enum.IntEnum):
     BarracksFlying = 46
     BarracksReactor = 38
     BarracksTechLab = 37
+    BarracksTechReactor = 958
     Battlecruiser = 57
+    BattlecruiserHelios = 1024
+    BattlecruiserHeliosMorph = 978
     Bunker = 24
     CommandCenter = 18
     CommandCenterFlying = 36
@@ -170,13 +282,14 @@ class Terran(enum.IntEnum):
     FactoryFlying = 43
     FactoryReactor = 40
     FactoryTechLab = 39
+    FactoryTechReactor = 959
     FusionCore = 30
     Ghost = 50
     GhostAcademy = 26
     GhostAlternate = 144
     GhostNova = 145
-    Hellion = 53
     Hellbat = 484
+    Hellion = 53
     KD8Charge = 830
     Liberator = 689
     LiberatorAG = 734
@@ -184,7 +297,6 @@ class Terran(enum.IntEnum):
     Marauder = 51
     Marine = 48
     Medivac = 54
-    MissileTurret = 23
     Nuke = 58
     OrbitalCommand = 132
     OrbitalCommandFlying = 134
@@ -194,7 +306,6 @@ class Terran(enum.IntEnum):
     Reactor = 6
     Reaper = 49
     Refinery = 20
-    RefineryRich = 1960
     RepairDrone = 1913
     SCV = 45
     SensorTower = 25
@@ -204,7 +315,9 @@ class Terran(enum.IntEnum):
     StarportFlying = 44
     StarportReactor = 42
     StarportTechLab = 41
+    StarportTechReactor = 960
     SupplyDepot = 19
+    SupplyDepotDrop = 900
     SupplyDepotLowered = 47
     TechLab = 5
     Thor = 52
@@ -213,7 +326,6 @@ class Terran(enum.IntEnum):
     VikingFighter = 35
     WidowMine = 498
     WidowMineBurrowed = 500
-
 
 class Zerg(enum.IntEnum):
     """Zerg units."""
@@ -241,7 +353,6 @@ class Zerg(enum.IntEnum):
     DroneBurrowed = 116
     EvolutionChamber = 90
     Extractor = 88
-    ExtractorRich = 1956
     GreaterSpire = 102
     Hatchery = 86
     Hive = 101
@@ -260,10 +371,12 @@ class Zerg(enum.IntEnum):
     LocustFlying = 693
     Lurker = 502
     LurkerBurrowed = 503
-    LurkerDen = 504
     LurkerCocoon = 501
+    LurkerDen = 504
     Mutalisk = 108
     NydusCanal = 142
+    NydusCanalAttacker = 491
+    NydusCanalCreeper = 492
     NydusNetwork = 95
     Overlord = 106
     OverlordTransport = 893
@@ -271,7 +384,6 @@ class Zerg(enum.IntEnum):
     Overseer = 129
     OverseerCocoon = 128
     OverseerOversightMode = 1912
-    ParasiticBombDummy = 824
     Queen = 126
     QueenBurrowed = 125
     Ravager = 688
@@ -294,7 +406,6 @@ class Zerg(enum.IntEnum):
     Viper = 499
     Zergling = 105
     ZerglingBurrowed = 119
-
 
 def get_unit_type(unit_id):
     for race in (Neutral, Protoss, Terran, Zerg):
