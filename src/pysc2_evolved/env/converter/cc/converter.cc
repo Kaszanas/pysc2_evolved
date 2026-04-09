@@ -70,17 +70,17 @@ absl::StatusOr<Converter> MakeConverter(
         "types, visual or raw. Specified: ",
         settings.num_action_types()));
   }
-  if (settings.num_unit_types() < 217) {
+  if (settings.num_unit_types() < 367) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Please specify the number of unit types which you would like to "
-        "be made visible. We don't support less than 217 unit types. "
+        "be made visible. We don't support less than 367 unit types. "
         "Specified: ",
         settings.num_unit_types()));
   }
-  if (settings.num_upgrade_types() < 86) {
+  if (settings.num_upgrade_types() < 91) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Please specify the number of upgrade types which you would like to "
-        "be made visible. We don't support less than 86 upgrade types. "
+        "be made visible. We don't support less than 91 upgrade types. "
         "Specified: ",
         settings.num_upgrade_types()));
   }

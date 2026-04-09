@@ -36,10 +36,10 @@ namespace {
 
 constexpr int kNumActionTypes = 539;
 constexpr int kMaxUnitCount = 16;
-constexpr int kNumUnitTypes = 243;
+constexpr int kNumUnitTypes = 367;
 constexpr int kNumUnitFeatures = 40;
 constexpr int kNumUpgrades = 40;
-constexpr int kNumUpgradeTypes = 86;
+constexpr int kNumUpgradeTypes = 91;
 constexpr int kMaxUnitSelectionSize = 16;
 constexpr int kMapSize = 128;
 constexpr int kRawResolution = 128;
