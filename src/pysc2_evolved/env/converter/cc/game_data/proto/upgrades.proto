@@ -116,7 +116,7 @@ enum Upgrades {
   ReaperJump = 109;
   IncreasedRange = 110;
   ZergBurrowMove = 111;
-  AnionPulseCrystals = 112;
+  AnionPulseCrystals112 = 112;
   TerranVehicleAndShipWeaponsLevel1 = 113;
   TerranVehicleAndShipWeaponsLevel2 = 114;
   TerranVehicleAndShipWeaponsLevel3 = 115;
@@ -155,9 +155,9 @@ enum Upgrades {
   HybridCPlasmaUpgradeInsane = 148;
   InterceptorLimit4 = 149;
   InterceptorLimit6 = 150;
-  330mmBarrageCannons = 151;
+  BarrageCannons330mm = 151;
   NotPossibleSiegeMode = 152;
-  NeoSteelFrame = 153;
+  NeoSteelFrame153 = 153;
   NeoSteelAndShrikeTurretIconUpgrade = 154;
   OcularImplants = 155;
   CrossSpectrumDampeners = 156;
@@ -238,7 +238,7 @@ enum Upgrades {
   AuxiliaryMedBots = 231;
   JuggernautPlating = 232;
   MarauderLifeBoost = 233;
-  CombatShield = 234;
+  CombatShield234 = 234;
   ReaperU238Rounds = 235;
   MaelstromRounds = 236;
   SiegeTankShapedBlast = 237;

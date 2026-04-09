@@ -33,7 +33,7 @@ enum Buffs {
   NeuralParasiteWait = 23;
   StimpackMarauder = 24;
   SupplyDrop = 25;
-  250mmStrikeCannons = 26;
+  StrikeCannons250mm = 26;
   Stimpack = 27;
   PsiStorm = 28;
   CloakFieldEffect = 29;
@@ -216,7 +216,7 @@ enum Buffs {
   PersonalCloakingFree = 206;
   EMPDrain = 207;
   MindBlastStun = 208;
-  330mmBarrageCannons = 209;
+  BarrageCannons330mm = 209;
   VoodooShield = 210;
   SpectreCloakingFree = 211;
   UltrasonicPulseStun = 212;

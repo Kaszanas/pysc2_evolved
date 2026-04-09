@@ -311,6 +311,23 @@ def _build_known_names(existing: Dict[int, Tuple[str, str]]) -> Dict[str, str]:
     return {name: race for name, race in existing.values()}
 
 
+# Manual race overrides for units where heuristic classification fails.
+# These are checked before the prefix scan to ensure correctness.
+RACE_OVERRIDES: Dict[str, str] = {
+    # SentryGun/SentryGunUnderground are Terran campaign turrets, not Protoss.
+    # The prefix scan picks Protoss because 'Sentry' (6 chars) is a Protoss unit.
+    "SentryGun": "Terran",
+    "SentryGunUnderground": "Terran",
+    # ThornLizard is a neutral critter, not Terran.
+    # The prefix scan picks Terran because 'Thor' (4 chars) is a Terran unit.
+    "ThornLizard": "Neutral",
+    # Viking (id 1940) is a Terran unit variant.
+    # The heuristic returns Neutral because VikingAssault/VikingFighter are longer
+    # than 'Viking' so name.startswith(known) never fires.
+    "Viking": "Terran",
+}
+
+
 def classify_unit(
     uid: int,
     name: str,
@@ -321,21 +338,26 @@ def classify_unit(
 
     Priority:
       1. Already classified in units.proto  → keep existing race.
-      2. Exact name match in known_names     → use that race.
-      3. Name starts with a known non-Neutral unit name → use that race.
-      4. Name contains a Neutral keyword     → Neutral.
-      5. Default                             → Neutral.
+      2. Manual RACE_OVERRIDES entry        → use override.
+      3. Exact name match in known_names    → use that race.
+      4. Name starts with a known non-Neutral unit name (≥7 chars) → use that race.
+         Minimum length of 7 prevents short names like 'Thor' (Terran) matching
+         'ThornLizard', or 'Sentry' (Protoss) matching 'SentryGun'.
+      5. Name contains a Neutral keyword    → Neutral.
+      6. Default                            → Neutral.
     """
     if uid in existing:
         return existing[uid][1]
+    if name in RACE_OVERRIDES:
+        return RACE_OVERRIDES[name]
     if name in known_names:
         return known_names[name]
-    # Prefix scan — longest match wins to avoid false positives.
+    # Prefix scan — longest match wins; only accept known_name of 7+ chars.
     best_match: Optional[Tuple[int, str]] = None
     for known_name, race in known_names.items():
         if race == "Neutral":
             continue
-        if name.startswith(known_name):
+        if len(known_name) >= 7 and name.startswith(known_name):
             if best_match is None or len(known_name) > best_match[0]:
                 best_match = (len(known_name), race)
     if best_match is not None:
@@ -406,8 +428,32 @@ def update_units_proto(
     classified: Dict[int, Tuple[str, str]],
     dry_run: bool,
 ) -> int:
-    """Rewrite units.proto with all classified units. Returns count of new entries."""
+    """Rewrite units.proto with classified units. Returns count of new entries.
+
+    Only adds new units that are:
+      1. Already present in the proto (always kept), OR
+      2. A family member (≥10-char prefix match) of any existing proto entry, AND
+      3. A melee candidate (passes is_melee_candidate).
+
+    This mirrors the kUnitsList selection criterion and keeps the proto small —
+    the original hand-curated proto has ~263 entries out of 1943 in stableid.json.
+    """
     text = proto_path.read_text()
+
+    # Collect ALL existing entries across all race enums for family membership check.
+    all_existing_proto: List[Tuple[str, str]] = []  # (race, name)
+    for race in RACES:
+        pat = rf"enum {race} \{{([^}}]*)\}}"
+        m0 = re.search(pat, text, re.DOTALL)
+        if not m0:
+            continue
+        for line in m0.group(1).splitlines():
+            line = line.strip().rstrip(";")
+            if not line or line.startswith("//"):
+                continue
+            parts = line.split("=")
+            if len(parts) == 2 and parts[1].strip().lstrip("-").isdigit():
+                all_existing_proto.append((race, parts[0].strip()))
 
     by_race: Dict[str, Dict[int, str]] = {r: {} for r in RACES}
     for uid, (name, race) in classified.items():
@@ -437,7 +483,7 @@ def update_units_proto(
                 continue
             existing_in_enum[int(val_str)] = ename
 
-        # Merge new entries (skip invalid names; deduplicate by name, prefer lower uid).
+        # Merge new entries: keep all existing; add new only if family member.
         merged: Dict[int, str] = {}
         used_in_race: Set[str] = set()
         for uid in sorted(existing_in_enum):
@@ -448,12 +494,22 @@ def update_units_proto(
             used_in_race.add(name)
 
         for uid, name in by_race[race].items():
+            # Skip digit-leading names (convention: append digits, e.g. SomeUnit8).
+            if name and name[0].isdigit():
+                continue
             if not _is_valid_identifier(name):
                 continue
-            if uid not in merged and name not in used_in_race:
-                merged[uid] = name
-                used_in_race.add(name)
-                added += 1
+            if uid in merged or name in used_in_race:
+                continue
+            # Only add new units that are family members of existing proto entries
+            # AND pass the melee-candidate filter.
+            if not is_melee_candidate(name):
+                continue
+            if not _is_family_member(name, all_existing_proto, min_prefix=10):
+                continue
+            merged[uid] = name
+            used_in_race.add(name)
+            added += 1
 
         # Rebuild enum body: Unknown* sentinel first, rest sorted by value.
         unknown = f"Unknown{race}"
@@ -478,14 +534,22 @@ def _is_valid_identifier(name: str) -> bool:
     return bool(_IDENTIFIER_RE.match(name))
 
 
-def _py_safe_name(name: str) -> str:
-    """Make a unit name safe as a Python identifier.
+_DIGIT_PREFIX_RE = re.compile(r'^(\d+(?:mm)?)(.+)$')
 
-    Python enum members must be valid identifiers: they cannot start with a
-    digit.  Prefix such names with an underscore so the enum can be defined.
+
+def _safe_name(name: str) -> str:
+    """Move a leading digit+unit prefix (e.g. '250mm', '330mm', '4') to the end.
+
+    '250mmStrikeCannons' -> 'StrikeCannons250mm'
+    '330mmBarrageCannons' -> 'BarrageCannons330mm'
+    '4SlotBag' -> 'SlotBag4'
+    Returns the original name unchanged if it already starts with a letter.
     """
-    if name and name[0].isdigit():
-        return "_" + name
+    if not name or not name[0].isdigit():
+        return name
+    m = _DIGIT_PREFIX_RE.match(name)
+    if m:
+        return m.group(2) + m.group(1)
     return name
 
 
@@ -495,13 +559,17 @@ def _generate_units_py(classified: Dict[int, Tuple[str, str]], original: str) ->
     by_race: Dict[str, Dict[int, str]] = {r: {} for r in RACES}
     used_names: Dict[str, Set[str]] = {r: set() for r in RACES}  # race → set of names
     for uid, (name, race) in sorted(classified.items()):
-        safe = _py_safe_name(name)
-        if not _is_valid_identifier(safe):
+        # Skip digit-leading names — they are not valid Python identifiers.
+        # Convention if ever needed: append digits (e.g. SomeUnit8), but in
+        # practice all such names are filtered by is_melee_candidate already.
+        if name and name[0].isdigit():
             continue
-        if safe in used_names[race]:
+        if not _is_valid_identifier(name):
+            continue
+        if name in used_names[race]:
             continue  # duplicate name — skip higher-uid variant
-        by_race[race][uid] = safe
-        used_names[race].add(safe)
+        by_race[race][uid] = name
+        used_names[race].add(name)
 
     # Preserve everything up to the first class definition.
     header_end = re.search(r"^class \w+\(enum\.IntEnum\):", original, re.MULTILINE)
@@ -566,6 +634,16 @@ def update_uint8_lookup_cc(
     text = cc_path.read_text()
 
     existing_entries = parse_kunits_list(cc_path)
+    # Deduplicate while preserving order (first occurrence wins).
+    # This corrects corruption from earlier script runs that re-added entries.
+    _seen_entries: Set[Tuple[str, str]] = set()
+    _deduped: List[Tuple[str, str]] = []
+    for _entry in existing_entries:
+        if _entry not in _seen_entries:
+            _seen_entries.add(_entry)
+            _deduped.append(_entry)
+    existing_entries = _deduped
+
     existing_set: Set[Tuple[str, str]] = set(existing_entries)
     redundant_keys = parse_redundant_keys(cc_path)
 
@@ -671,7 +749,18 @@ def update_buffs_proto(
     dry_run: bool,
 ) -> int:
     existing = parse_single_enum(proto_path, "Buffs")
-    new_entries = {uid: name for uid, name in stableid_buffs.items() if uid not in existing}
+    existing_names_lower = {n.lower() for n in existing.values()}
+    new_entries = {}
+    for uid, name in stableid_buffs.items():
+        if uid in existing:
+            continue
+        name = _safe_name(name)
+        if not _is_valid_identifier(name):
+            continue
+        if name.lower() in existing_names_lower:
+            name = f"{name}{uid}"  # disambiguate: keep the ID, rename to avoid case conflict
+        new_entries[uid] = name
+        existing_names_lower.add(name.lower())
     if not new_entries:
         return 0
     merged = {**existing, **new_entries}
@@ -688,7 +777,18 @@ def update_upgrades_proto(
     dry_run: bool,
 ) -> int:
     existing = parse_single_enum(proto_path, "Upgrades")
-    new_entries = {uid: name for uid, name in stableid_upgrades.items() if uid not in existing}
+    existing_names_lower = {n.lower() for n in existing.values()}
+    new_entries = {}
+    for uid, name in stableid_upgrades.items():
+        if uid in existing:
+            continue
+        name = _safe_name(name)
+        if not _is_valid_identifier(name):
+            continue
+        if name.lower() in existing_names_lower:
+            name = f"{name}{uid}"  # disambiguate: keep the ID, rename to avoid case conflict
+        existing_names_lower.add(name.lower())
+        new_entries[uid] = name
     if not new_entries:
         return 0
     merged = {**existing, **new_entries}
@@ -770,12 +870,20 @@ def main() -> None:
     # Build a set of all names already used in the proto to detect conflicts.
     existing_names: Set[str] = {name for name, _ in existing.values()}
 
+    # Build a flat list of (race, name) tuples for the family-membership check.
+    # This mirrors what update_units_proto uses internally.
+    all_existing_proto: List[Tuple[str, str]] = [
+        (race, name) for name, race in existing.values()
+    ]
+
     # Classify every unit from stableid.json.
     # For units already in the proto, preserve their existing name and race —
     # stableid.json sometimes uses different internal names (e.g. "HellionTank"
     # vs the proto's "Hellbat").  Only truly new IDs get the stableid name.
     # Skip stableid units whose names would duplicate an existing enum member
     # (these are usually campaign/variant units sharing a name with a melee unit).
+    # Also skip any unit that would not pass the family-membership filter in
+    # update_units_proto, so that classified stays consistent with the proto.
     classified: Dict[int, Tuple[str, str]] = {}
     new_units: List[Tuple[int, str, str]] = []
     for uid, name in stableid_units.items():
@@ -784,6 +892,13 @@ def main() -> None:
         else:
             if name in existing_names:
                 # Duplicate name — skip to avoid proto/Python enum conflicts.
+                continue
+            if name and name[0].isdigit():
+                continue  # skip digit-leading names
+            # Only add units that are family members of existing proto entries.
+            if not args.include_all and not _is_family_member(
+                name, all_existing_proto, min_prefix=10
+            ):
                 continue
             race = classify_unit(uid, name, existing, known_names)
             classified[uid] = (name, race)
