@@ -90,6 +90,12 @@ bazel_build_python_protos_local: ## Builds Python proto bindings for the convert
 .PHONY: bazel_build_extensions_local
 bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local bazel_build_python_protos_local ## Builds both pybind11 extensions (converter + uint8_lookup) and Python proto bindings locally via Bazelisk.
 
+# Bazel places py_proto_library outputs inside _virtual_imports/<proto_name>/ due to
+# strip_import_prefix = "/src" on the proto_library targets.
+PROTO_BIN = bazel-bin/src/pysc2_evolved/env/converter
+PROTO_VIRTUAL_CONVERTER = $(PROTO_BIN)/proto/_virtual_imports/converter_proto/pysc2_evolved/env/converter/proto
+PROTO_VIRTUAL_GAME_DATA  = $(PROTO_BIN)/cc/game_data/proto/_virtual_imports
+
 # Wheel packaging
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make copy_extensions_local EXT=so
@@ -99,13 +105,13 @@ copy_extensions_local: ## Copies compiled extensions and Python proto bindings f
 	   src/pysc2_evolved/env/converter/cc/python/converter.$(EXT)
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT)
-	cp bazel-bin/src/pysc2_evolved/env/converter/proto/converter_pb2.py \
+	cp $(PROTO_VIRTUAL_CONVERTER)/converter_pb2.py \
 	   src/pysc2_evolved/env/converter/proto/converter_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/buffs_proto/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
 	   src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/units_proto/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
 	   src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/upgrades_proto/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
 	   src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
@@ -117,13 +123,13 @@ stage_extensions_local: ## Copies compiled extensions and Python proto bindings 
 	   cc-dist/converter.$(EXT)
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   cc-dist/uint8_lookup.$(EXT)
-	cp bazel-bin/src/pysc2_evolved/env/converter/proto/converter_pb2.py \
+	cp $(PROTO_VIRTUAL_CONVERTER)/converter_pb2.py \
 	   cc-dist/converter_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/buffs_proto/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
 	   cc-dist/buffs_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/units_proto/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
 	   cc-dist/units_pb2.py
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	cp $(PROTO_VIRTUAL_GAME_DATA)/upgrades_proto/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
 	   cc-dist/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
