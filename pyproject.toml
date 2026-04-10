@@ -12,7 +12,7 @@ dependencies = [
     "click>=8.1.8",
     "deepdiff>=8.4.2",
     "dm-env>=1.6",
-    "dm-env-rpc>=1.1.7",
+    "dm-env-rpc>=1.1.6,<1.1.7",
     "enum34>=1.1.10",
     "mock>=5.2.0",
     "mpyq>=0.2.5",
@@ -51,6 +51,8 @@ testpaths = ["src"]
 python_files = ["*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+addopts = "--import-mode=importlib"
+collect_ignore_glob = ["bazel-*"]
 markers = [
     "minor: tests that do not require a running SC2 game engine (safe for CI)",
     "sc2: tests that require a running StarCraft II game engine",

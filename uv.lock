@@ -227,7 +227,7 @@ wheels = [
 
 [[package]]
 name = "dm-env-rpc"
-version = "1.1.7"
+version = "1.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dm-env" },
@@ -237,9 +237,9 @@ dependencies = [
     { name = "numpy" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ce/19/5338da370f8626729dc3d54fa0b0a157e762d60a8b4d18156ca0e744d958/dm_env_rpc-1.1.7.tar.gz", hash = "sha256:d3e0559d1991be33f11fa56482aa4a06e974707409737ebd4186fdb6134e80ad", size = 45898, upload-time = "2026-02-20T10:58:43.853Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/ed/586a5d77e26eabb6454f767c9ab0b19eac78f0edf6c109dd43df77237fde/dm-env-rpc-1.1.6.tar.gz", hash = "sha256:7f42b6686027a648f60494e6821e4663a7ffe37f2d4629ab7b3479e23df9385f", size = 43891, upload-time = "2023-09-29T09:53:36.288Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/75/0d0e3cdd12b127138c0d23ab8bf988a6ad1e75e8e641e410954dee862a5d/dm_env_rpc-1.1.7-py3-none-any.whl", hash = "sha256:17cedf03b67b8079822f90a8a7629ba74b02dd6eba37bbab647433d5d6e548ef", size = 77849, upload-time = "2026-02-20T10:57:55.938Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/f6/fe7402cf871ba34007eeebadad5f46ce2fc2c641bfb3c52aa2094d7d6494/dm_env_rpc-1.1.6-py3-none-any.whl", hash = "sha256:b34585307d488076c3944440dd578e7880ca64dcade7160414776677fb50b675", size = 76460, upload-time = "2023-09-29T09:53:34.707Z" },
 ]
 
 [[package]]
@@ -769,7 +769,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "deepdiff", specifier = ">=8.4.2" },
     { name = "dm-env", specifier = ">=1.6" },
-    { name = "dm-env-rpc", specifier = ">=1.1.7" },
+    { name = "dm-env-rpc", specifier = ">=1.1.6,<1.1.7" },
     { name = "enum34", specifier = ">=1.1.10" },
     { name = "mock", specifier = ">=5.2.0" },
     { name = "mpyq", specifier = ">=0.2.5" },
