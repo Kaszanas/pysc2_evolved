@@ -17,10 +17,11 @@ import numpy
 
 from pysc2_evolved.agents import base_agent
 from pysc2_evolved.lib import actions, features
+from pysc2_evolved.lib.features_types import PlayerRelative
 
-_PLAYER_SELF = features.PlayerRelative.SELF
-_PLAYER_NEUTRAL = features.PlayerRelative.NEUTRAL  # beacon/minerals
-_PLAYER_ENEMY = features.PlayerRelative.ENEMY
+_PLAYER_SELF = PlayerRelative.SELF
+_PLAYER_NEUTRAL = PlayerRelative.NEUTRAL  # beacon/minerals
+_PLAYER_ENEMY = PlayerRelative.ENEMY
 
 FUNCTIONS = actions.FUNCTIONS
 RAW_FUNCTIONS = actions.RAW_FUNCTIONS

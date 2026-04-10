@@ -18,18 +18,19 @@ import pytest
 from s2clientprotocol import common_pb2
 
 from pysc2_evolved.lib import actions, features, point, units
+from pysc2_evolved.lib.features_types import PlayerRelative
 from pysc2_evolved.tests import dummy_observation
 
 _PROBE = dummy_observation.Unit(
-    units.Protoss.Probe, features.PlayerRelative.SELF, 20, 20, 0, 0, 1.0
+    units.Protoss.Probe, PlayerRelative.SELF, 20, 20, 0, 0, 1.0
 )
 
 _ZEALOT = dummy_observation.Unit(
-    units.Protoss.Zealot, features.PlayerRelative.SELF, 100, 50, 0, 0, 1.0
+    units.Protoss.Zealot, PlayerRelative.SELF, 100, 50, 0, 0, 1.0
 )
 
 _MOTHERSHIP = dummy_observation.Unit(
-    units.Protoss.Mothership, features.PlayerRelative.SELF, 350, 7, 200, 0, 1.0
+    units.Protoss.Mothership, PlayerRelative.SELF, 350, 7, 200, 0, 1.0
 )
 
 
@@ -245,7 +246,7 @@ class TestDummyObservation:
         feature_units = [
             dummy_observation.FeatureUnit(
                 units.Protoss.Probe,
-                features.PlayerRelative.SELF,
+                PlayerRelative.SELF,
                 owner=1,
                 pos=common_pb2.Point(x=10, y=10, z=0),
                 radius=1.0,
@@ -257,7 +258,7 @@ class TestDummyObservation:
             ),
             dummy_observation.FeatureUnit(
                 units.Terran.Marine,
-                features.PlayerRelative.SELF,
+                PlayerRelative.SELF,
                 owner=1,
                 pos=common_pb2.Point(x=11, y=12, z=0),
                 radius=1.0,
