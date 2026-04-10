@@ -12,6 +12,7 @@ dependencies = [
     "click>=8.1.8",
     "deepdiff>=8.4.2",
     "dm-env>=1.6",
+    "dm-env-rpc>=1.1.7",
     "enum34>=1.1.10",
     "mock>=5.2.0",
     "mpyq>=0.2.5",
@@ -25,6 +26,7 @@ dependencies = [
     "s2protocol>=5.0.15.95299.0",
     "sk-video>=1.1.10",
     "tqdm>=4.67.1",
+    "typing-extensions>=4.15.0",
     "websocket-client>=1.8.0",
 ]
 
