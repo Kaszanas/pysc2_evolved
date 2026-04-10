@@ -37,7 +37,22 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["commitizen>=4.6.2", "pre-commit>=4.2.0", "ruff>=0.11.8"]
+dev = [
+    "commitizen>=4.6.2",
+    "pre-commit>=4.2.0",
+    "pytest>=9.0.3",
+    "ruff>=0.11.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src"]
+python_files = ["*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "minor: tests that do not require a running SC2 game engine (safe for CI)",
+    "sc2: tests that require a running StarCraft II game engine",
+]
 
 [tool.ruff.lint]
 extend-select = ["I"]

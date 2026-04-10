@@ -14,7 +14,7 @@
 # limitations under the License.
 """Test that two built in bots can be watched by an observer."""
 
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -22,6 +22,7 @@ from pysc2_evolved import maps, run_configs
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestObserver(utils.TestCase):
     def test_observer(self):
         run_config = run_configs.get()
@@ -67,8 +68,4 @@ class TestObserver(utils.TestCase):
                     outcome = True
                     break
 
-            self.assertTrue(outcome)
-
-
-if __name__ == "__main__":
-    absltest.main()
+            assert outcome

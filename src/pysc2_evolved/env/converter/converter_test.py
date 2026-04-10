@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from absl.testing import absltest, parameterized
+import pytest
 from s2clientprotocol import common_pb2, raw_pb2, sc2api_pb2, spatial_pb2
 
 from pysc2_evolved.env.converter import converter
@@ -119,7 +119,8 @@ def _make_observation():
     )
 
 
-class RawConverterTest(absltest.TestCase):
+@pytest.mark.minor
+class TestRawConverter:
     def test_action_spec(self):
         cvr = converter.Converter(
             settings=_make_converter_settings("raw"),
@@ -127,26 +128,21 @@ class RawConverterTest(absltest.TestCase):
         )
 
         action_spec = cvr.action_spec()
-        self.assertCountEqual(
-            action_spec.keys(),
-            [
-                "queued",
-                "repeat",
-                "target_unit_tag",
-                "unit_tags",
-                "world",
-                "delay",
-                "function",
-            ],
-        )
+        assert set(action_spec.keys()) == {
+            "queued",
+            "repeat",
+            "target_unit_tag",
+            "unit_tags",
+            "world",
+            "delay",
+            "function",
+        }
 
         for k, v in action_spec.items():
-            self.assertEqual(k, v.name, msg=k)
-            self.assertEqual(v.dtype, np.int32, msg=k)
-            self.assertEqual(
-                v.shape, (MAX_UNIT_SELECTION_SIZE,) if k == "unit_tags" else (), msg=k
-            )
-            self.assertEqual(v.minimum, (1,) if k == "delay" else (0,), msg=k)
+            assert k == v.name, k
+            assert v.dtype == np.int32, k
+            assert v.shape == ((MAX_UNIT_SELECTION_SIZE,) if k == "unit_tags" else ()), k
+            assert v.minimum == ((1,) if k == "delay" else (0,)), k
 
         for k, v in {
             "queued": 1,
@@ -156,7 +152,7 @@ class RawConverterTest(absltest.TestCase):
             "delay": 127,
             "function": NUM_ACTION_TYPES - 1,
         }.items():
-            self.assertEqual(action_spec[k].maximum, (v,), msg=k)
+            assert action_spec[k].maximum == (v,), k
 
     def test_action_move_camera(self):
         cvr = converter.Converter(
@@ -183,7 +179,7 @@ class RawConverterTest(absltest.TestCase):
             ),
         )
 
-        self.assertEqual(expected.SerializeToString(), action.SerializeToString())
+        assert expected.SerializeToString() == action.SerializeToString()
 
     def test_action_smart_unit(self):
         cvr = converter.Converter(
@@ -221,10 +217,11 @@ class RawConverterTest(absltest.TestCase):
             ),
         )
 
-        self.assertEqual(expected.SerializeToString(), action.SerializeToString())
+        assert expected.SerializeToString() == action.SerializeToString()
 
 
-class VisualConverterTest(absltest.TestCase):
+@pytest.mark.minor
+class TestVisualConverter:
     def test_action_spec(self):
         cvr = converter.Converter(
             settings=_make_converter_settings("visual"),
@@ -232,32 +229,29 @@ class VisualConverterTest(absltest.TestCase):
         )
 
         action_spec = cvr.action_spec()
-        self.assertCountEqual(
-            action_spec,
-            [
-                "build_queue_id",
-                "control_group_act",
-                "control_group_id",
-                "minimap",
-                "queued",
-                "screen",
-                "screen2",
-                "select_add",
-                "select_point_act",
-                "select_unit_act",
-                "select_unit_id",
-                "select_worker",
-                "unload_id",
-                "delay",
-                "function",
-            ],
-        )
+        assert set(action_spec.keys()) == {
+            "build_queue_id",
+            "control_group_act",
+            "control_group_id",
+            "minimap",
+            "queued",
+            "screen",
+            "screen2",
+            "select_add",
+            "select_point_act",
+            "select_unit_act",
+            "select_unit_id",
+            "select_worker",
+            "unload_id",
+            "delay",
+            "function",
+        }
 
         for k, v in action_spec.items():
-            self.assertEqual(k, v.name, msg=k)
-            self.assertEqual(v.dtype, np.int32, msg=k)
-            self.assertEqual(v.shape, (), msg=k)
-            self.assertEqual(v.minimum, (1,) if (k == "delay") else (0,), msg=k)
+            assert k == v.name, k
+            assert v.dtype == np.int32, k
+            assert v.shape == (), k
+            assert v.minimum == ((1,) if (k == "delay") else (0,)), k
 
         for k, v in {
             "build_queue_id": 9,
@@ -276,7 +270,7 @@ class VisualConverterTest(absltest.TestCase):
             "delay": 127,
             "function": NUM_ACTION_TYPES - 1,
         }.items():
-            self.assertEqual(action_spec[k].maximum, (v,), msg=k)
+            assert action_spec[k].maximum == (v,), k
 
     def test_action_move_camera(self):
         cvr = converter.Converter(
@@ -302,7 +296,7 @@ class VisualConverterTest(absltest.TestCase):
             ),
         )
 
-        self.assertEqual(expected.SerializeToString(), action.SerializeToString())
+        assert expected.SerializeToString() == action.SerializeToString()
 
     def test_action_smart_screen(self):
         cvr = converter.Converter(
@@ -338,11 +332,12 @@ class VisualConverterTest(absltest.TestCase):
             ),
         )
 
-        self.assertEqual(expected.SerializeToString(), action.SerializeToString())
+        assert expected.SerializeToString() == action.SerializeToString()
 
 
-@parameterized.parameters(("visual",), ("raw",))
-class ConverterTest(parameterized.TestCase):
+@pytest.mark.minor
+@pytest.mark.parametrize("mode", ["visual", "raw"])
+class TestConverter:
     def test_construction(self, mode):
         converter.Converter(
             settings=_make_converter_settings(mode),
@@ -357,7 +352,7 @@ class ConverterTest(parameterized.TestCase):
 
         for delay in range(1, 128):
             action = cvr.convert_action(dict(function=0, delay=delay))
-            self.assertEqual(action.delay, delay)
+            assert action.delay == delay
 
     def test_observation_spec(self, mode):
         cvr = converter.Converter(
@@ -391,17 +386,17 @@ class ConverterTest(parameterized.TestCase):
                 "screen_player_relative",
             ]
 
-        self.assertCountEqual(list(obs_spec), expected_fields)
+        assert set(obs_spec.keys()) == set(expected_fields)
 
         for k, v in obs_spec.items():
-            self.assertEqual(k, v.name, msg=k)
+            assert k == v.name, k
             if k.startswith("minimap_") or k.startswith("screen_"):
-                self.assertEqual(v.dtype, np.uint8, msg=k)
+                assert v.dtype == np.uint8, k
             else:
-                self.assertEqual(v.dtype, np.int32, msg=k)
+                assert v.dtype == np.int32, k
                 if "upgrades_fixed_length" not in k:
-                    self.assertFalse(hasattr(v, "min"), msg=k)
-                    self.assertFalse(hasattr(v, "max"), msg=k)
+                    assert not hasattr(v, "min"), k
+                    assert not hasattr(v, "max"), k
 
         for k, v in {
             "minimap_height_map": 255,
@@ -409,13 +404,16 @@ class ConverterTest(parameterized.TestCase):
             "upgrades_fixed_length": NUM_UPGRADE_TYPES + 1,
             "opponent_upgrades_fixed_length": NUM_UPGRADE_TYPES + 1,
         }.items():
-            self.assertEqual(obs_spec[k].minimum, (0,), msg=k)
-            self.assertEqual(obs_spec[k].maximum, (v,), msg=k)
+            assert obs_spec[k].minimum == (0,), k
+            assert obs_spec[k].maximum == (v,), k
 
         if mode == "visual":
-            for k, v in {"screen_height_map": 255, "screen_player_relative": 4}.items():
-                self.assertEqual(obs_spec[k].minimum, (0,), msg=k)
-                self.assertEqual(obs_spec[k].maximum, (v,), msg=k)
+            for k, v in {
+                "screen_height_map": 255,
+                "screen_player_relative": 4,
+            }.items():
+                assert obs_spec[k].minimum == (0,), k
+                assert obs_spec[k].maximum == (v,), k
 
         for f in [
             "away_race_observed",
@@ -423,9 +421,9 @@ class ConverterTest(parameterized.TestCase):
             "game_loop",
             "home_race_requested",
         ]:
-            self.assertEqual(obs_spec[f].shape, (1,), msg=f)
+            assert obs_spec[f].shape == (1,), f
 
-        self.assertEqual(obs_spec["mmr"].shape, ())
+        assert obs_spec["mmr"].shape == ()
 
         for k, v in {
             "player": 11,
@@ -435,14 +433,12 @@ class ConverterTest(parameterized.TestCase):
             "upgrades_fixed_length": NUM_UPGRADES,
             "opponent_upgrades_fixed_length": NUM_UPGRADES,
         }.items():
-            self.assertEqual(obs_spec[k].shape, (v,), k)
+            assert obs_spec[k].shape == (v,), k
 
         if mode == "raw":
-            self.assertEqual(
-                obs_spec["raw_units"].shape, (MAX_UNIT_COUNT, NUM_UNIT_FEATURES + 2)
-            )
+            assert obs_spec["raw_units"].shape == (MAX_UNIT_COUNT, NUM_UNIT_FEATURES + 2)
         else:
-            self.assertEqual(obs_spec["available_actions"].shape, (NUM_ACTION_TYPES,))
+            assert obs_spec["available_actions"].shape == (NUM_ACTION_TYPES,)
 
     def test_observation_matches_spec(self, mode):
         cvr = converter.Converter(
@@ -454,12 +450,8 @@ class ConverterTest(parameterized.TestCase):
         converted = cvr.convert_observation(_make_observation())
 
         for k, v in obs_spec.items():
-            self.assertIn(k, converted)
-            self.assertEqual(v.shape, converted[k].shape)
+            assert k in converted
+            assert v.shape == converted[k].shape
 
         for k in converted:
-            self.assertIn(k, obs_spec)
-
-
-if __name__ == "__main__":
-    absltest.main()
+            assert k in obs_spec

@@ -14,7 +14,7 @@
 # limitations under the License.
 """Verify that the general ids in stable ids match what we expect."""
 
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -23,6 +23,7 @@ from pysc2_evolved.lib import actions
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestGeneralActions(utils.TestCase):
     """Verify that the general ids in stable ids match what we expect."""
 
@@ -80,8 +81,4 @@ class TestGeneralActions(utils.TestCase):
                     )
 
             print("\n".join(errors))
-            self.assertFalse(errors)
-
-
-if __name__ == "__main__":
-    absltest.main()
+            assert not errors

@@ -15,7 +15,7 @@
 """Verify that the game renders rgb pixels."""
 
 import numpy as np
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -24,6 +24,7 @@ from pysc2_evolved.lib import features
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestRender(utils.TestCase):
     def test_render(self):
         interface = sc_pb.InterfaceOptions()
@@ -68,10 +69,10 @@ class TestRender(utils.TestCase):
 
             game_info = controller.game_info()
 
-            self.assertEqual(interface.raw, game_info.options.raw)
-            self.assertEqual(interface.feature_layer, game_info.options.feature_layer)
+            assert interface.raw == game_info.options.raw
+            assert interface.feature_layer == game_info.options.feature_layer
             # Can fail if rendering is disabled.
-            self.assertEqual(interface.render, game_info.options.render)
+            assert interface.render == game_info.options.render
 
             for _ in range(50):
                 controller.step(8)
@@ -96,24 +97,16 @@ class TestRender(utils.TestCase):
                 )
 
                 # Right shapes.
-                self.assertEqual(rgb_screen.shape, (256, 256, 3))
-                self.assertEqual(rgb_minimap.shape, (128, 128, 3))
-                self.assertEqual(
-                    fl_screen.shape, (len(features.SCREEN_FEATURES), 84, 84)
-                )
-                self.assertEqual(
-                    fl_minimap.shape, (len(features.MINIMAP_FEATURES), 64, 64)
-                )
+                assert rgb_screen.shape == (256, 256, 3)
+                assert rgb_minimap.shape == (128, 128, 3)
+                assert fl_screen.shape == (len(features.SCREEN_FEATURES), 84, 84)
+                assert fl_minimap.shape == (len(features.MINIMAP_FEATURES), 64, 64)
 
                 # Not all black.
-                self.assertTrue(rgb_screen.any())
-                self.assertTrue(rgb_minimap.any())
-                self.assertTrue(fl_screen.any())
-                self.assertTrue(fl_minimap.any())
+                assert rgb_screen.any()
+                assert rgb_minimap.any()
+                assert fl_screen.any()
+                assert fl_minimap.any()
 
                 if observation.player_result:
                     break
-
-
-if __name__ == "__main__":
-    absltest.main()

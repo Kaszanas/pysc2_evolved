@@ -14,8 +14,8 @@
 # limitations under the License.
 """Test that every version in run_configs actually runs."""
 
+import pytest
 from absl import logging
-from absl.testing import absltest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -30,34 +30,32 @@ def log_center(s, *args):
     logging.info(((" " + s + " ") % args).center(80, "-"))
 
 
-class TestVersions(absltest.TestCase):
+@pytest.mark.sc2
+class TestVersions:
     def test_version_numbers(self):
         run_config = run_configs.get()
         failures = []
         for game_version, version in sorted(run_config.get_versions().items()):
             try:
-                self.assertEqual(game_version, version.game_version)
+                assert game_version == version.game_version
                 log_center("starting version check: %s", game_version)
                 run_config = run_configs.get(version=game_version)
                 with run_config.start(want_rgb=False) as controller:
                     ping = controller.ping()
                     logging.info("expected: %s", version)
                     logging.info("actual: %s", ", ".join(str(ping).strip().split("\n")))
-                    self.assertEqual(version.build_version, ping.base_build)
+                    assert version.build_version == ping.base_build
                     if version.game_version != "latest":
-                        self.assertEqual(
-                            major_version(ping.game_version),
-                            major_version(version.game_version),
+                        assert major_version(ping.game_version) == major_version(
+                            version.game_version
                         )
-                        self.assertEqual(
-                            version.data_version.lower(), ping.data_version.lower()
-                        )
+                        assert version.data_version.lower() == ping.data_version.lower()
                 log_center("success: %s", game_version)
             except:  # noqa: E722 # pylint: disable=bare-except
                 log_center("failure: %s", game_version)
                 logging.exception("Failed")
                 failures.append(game_version)
-        self.assertEmpty(failures)
+        assert not failures
 
     def test_versions_create_game(self):
         run_config = run_configs.get()
@@ -104,8 +102,4 @@ class TestVersions(absltest.TestCase):
                 logging.exception("Failed")
                 log_center("failure: %s", game_version)
                 failures.append(game_version)
-        self.assertEmpty(failures)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert not failures

@@ -14,10 +14,11 @@
 
 import concurrent.futures
 import random
+import unittest
 
 import dm_env
 import numpy as np
-from absl.testing import absltest
+import pytest
 from dm_env import test_utils
 from s2clientprotocol import common_pb2, sc2api_pb2
 
@@ -63,16 +64,17 @@ def _agent_interface_format():
     )
 
 
-class StreamedEnvTest(absltest.TestCase):
+@pytest.mark.minor
+class TestStreamedEnv:
     def _check_episode(self, stream):
         timestep = stream.reset()
-        self.assertIsNotNone(timestep)
+        assert timestep is not None
 
         while True:
             timestep = stream.step(_action(random.randint(1, 5)))
             if timestep.step_type == dm_env.StepType.LAST:
                 break
-        self.assertIsNotNone(timestep)
+        assert timestep is not None
 
     def test_single_player(self):
         env = converted_env.ConvertedEnvironment(
@@ -117,7 +119,8 @@ class StreamedEnvTest(absltest.TestCase):
                     f.result()
 
 
-class StreamedEnvConformanceTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
+@pytest.mark.minor
+class TestStreamedEnvConformance(test_utils.EnvironmentTestMixin, unittest.TestCase):
     def make_object_under_test(self):
         env = converted_env.ConvertedEnvironment(
             env=mock_sc2_env.SC2TestEnv(
@@ -134,7 +137,3 @@ class StreamedEnvConformanceTest(test_utils.EnvironmentTestMixin, absltest.TestC
         )
 
         return converted_env.make_streams(env)[0]
-
-
-if __name__ == "__main__":
-    absltest.main()
