@@ -79,38 +79,70 @@ bazel_build_uint8_lookup_local: ## Builds the uint8_lookup pybind11 extension lo
 	$(BAZELISK) build $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) \
 	//src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
 
+.PHONY: bazel_build_python_protos_local
+bazel_build_python_protos_local: ## Builds Python proto bindings for the converter and game_data packages via Bazelisk.
+	$(BAZELISK) build $(BAZEL_FLAGS) \
+	//src/pysc2_evolved/env/converter/proto:converter_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:buffs_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:units_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:upgrades_py_pb2
+
 .PHONY: bazel_build_extensions_local
-bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local ## Builds both pybind11 extensions (converter + uint8_lookup) locally via Bazelisk.
+bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local bazel_build_python_protos_local ## Builds both pybind11 extensions (converter + uint8_lookup) and Python proto bindings locally via Bazelisk.
 
 # Wheel packaging
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make copy_extensions_local EXT=so
 .PHONY: copy_extensions_local
-copy_extensions_local: ## Copies compiled extensions from bazel-bin into the source tree (local builds). Requires EXT=so|pyd.
+copy_extensions_local: ## Copies compiled extensions and Python proto bindings from bazel-bin into the source tree (local builds). Requires EXT=so|pyd.
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/python/converter.$(EXT)
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT)
+	cp bazel-bin/src/pysc2_evolved/env/converter/proto/converter_pb2.py \
+	   src/pysc2_evolved/env/converter/proto/converter_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make stage_extensions_local EXT=so
 .PHONY: stage_extensions_local
-stage_extensions_local: ## Copies compiled extensions from bazel-bin into cc-dist/ for CI artifact upload. Requires EXT=so|pyd.
+stage_extensions_local: ## Copies compiled extensions and Python proto bindings from bazel-bin into cc-dist/ for CI artifact upload. Requires EXT=so|pyd.
 	mkdir -p cc-dist
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
 	   cc-dist/converter.$(EXT)
 	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   cc-dist/uint8_lookup.$(EXT)
+	cp bazel-bin/src/pysc2_evolved/env/converter/proto/converter_pb2.py \
+	   cc-dist/converter_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	   cc-dist/buffs_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	   cc-dist/units_pb2.py
+	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	   cc-dist/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # SRCDIR must be set to the directory containing the pre-built extensions.
 # Example: make place_extensions_local EXT=so SRCDIR=cc-dist
 .PHONY: place_extensions_local
-place_extensions_local: ## Places pre-built extensions from SRCDIR into the source tree (CI packaging). Requires EXT=so|pyd SRCDIR=path.
+place_extensions_local: ## Places pre-built extensions and Python proto bindings from SRCDIR into the source tree (CI packaging). Requires EXT=so|pyd SRCDIR=path.
 	cp $(SRCDIR)/converter.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/python/converter.$(EXT)
 	cp $(SRCDIR)/uint8_lookup.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT)
+	cp $(SRCDIR)/converter_pb2.py \
+	   src/pysc2_evolved/env/converter/proto/converter_pb2.py
+	cp $(SRCDIR)/buffs_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py
+	cp $(SRCDIR)/units_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py
+	cp $(SRCDIR)/upgrades_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py
 
 .PHONY: build_wheel_local
 build_wheel_local: ## Builds a platform-specific wheel via uv.
