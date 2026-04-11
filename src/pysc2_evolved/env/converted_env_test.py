@@ -51,7 +51,7 @@ def _converter_factory(game_info: sc2api_pb2.ResponseGameInfo):
             ),
             num_action_types=540,
             num_unit_types=367,
-            num_upgrade_types=86,
+            num_upgrade_types=91,
             max_num_upgrades=40,
         ),
         environment_info=converter_pb2.EnvironmentInfo(game_info=game_info),
