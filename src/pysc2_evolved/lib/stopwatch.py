@@ -286,7 +286,7 @@ class StopWatch(object):
         table = [["", "% total", "sum", "avg", "dev", "min", "max", "num"]]
         for k, v in sorted(self._times.items()):
             percent = 100 * v.sum / (total or 1)
-            if percent > threshold:  # ignore anything below the threshold
+            if total == 0 or percent > threshold:  # always show entries when total is 0
                 table.append(
                     [
                         k,

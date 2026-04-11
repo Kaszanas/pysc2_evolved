@@ -24,7 +24,7 @@ import pytest
 from pysc2_evolved.lib import named_array
 
 
-class TestEnum(enum.IntEnum):
+class SampleEnum(enum.IntEnum):
     a = 0
     b = 1
     c = 2
@@ -36,7 +36,7 @@ class BadEnum(enum.IntEnum):
     c = 3
 
 
-class TestNamedTuple(collections.namedtuple("TestNamedTuple", ["a", "b", "c"])):
+class SampleNamedTuple(collections.namedtuple("SampleNamedTuple", ["a", "b", "c"])):
     pass
 
 
@@ -101,10 +101,10 @@ class TestNamedArray:
             [["a", "b", "c"]],
             (("a", "b", "c")),
             [("a", "b", "c")],
-            TestNamedTuple,
-            [TestNamedTuple],
-            TestEnum,
-            [TestEnum],
+            SampleNamedTuple,
+            [SampleNamedTuple],
+            SampleEnum,
+            [SampleEnum],
         ],
         ids=[
             "list",

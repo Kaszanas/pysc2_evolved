@@ -50,7 +50,7 @@ def _converter_factory(game_info: sc2api_pb2.ResponseGameInfo):
                 resolution=common_pb2.Size2DI(x=128, y=128),
             ),
             num_action_types=540,
-            num_unit_types=217,
+            num_unit_types=367,
             num_upgrade_types=86,
             max_num_upgrades=40,
         ),

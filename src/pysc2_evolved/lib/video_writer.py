@@ -13,21 +13,21 @@
 # limitations under the License.
 """Write a video based on a numpy array."""
 
-from skvideo import io
+import imageio
 
 
-class VideoWriter(io.FFmpegWriter):
-    """Write a video based on a numpy array.
-
-    Subclass/wrap FFmpegWriter to make it easy to switch to a different library.
-    """
+class VideoWriter:
+    """Write a video based on a numpy array."""
 
     def __init__(self, filename, frame_rate):
-        super(VideoWriter, self).__init__(filename, outputdict={"-r": str(frame_rate)})
+        self._writer = imageio.get_writer(filename, fps=frame_rate)
 
     def add(self, frame):
         """Add a frame to the video based on a numpy array."""
-        self.writeFrame(frame)
+        self._writer.append_data(frame)
+
+    def close(self):
+        self._writer.close()
 
     def __del__(self):
         self.close()
