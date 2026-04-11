@@ -910,7 +910,7 @@ requires-dist = [
     { name = "mpyq", specifier = ">=0.2.5" },
     { name = "numpy", specifier = ">=2.4.4" },
     { name = "portpicker", specifier = ">=1.6.0" },
-    { name = "protobuf", specifier = ">=6,<8" },
+    { name = "protobuf", specifier = ">=7.34.1,<8" },
     { name = "pygame", specifier = ">=2.6.1" },
     { name = "pys2clientprotocol", specifier = ">=1.0.2" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
