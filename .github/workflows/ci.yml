@@ -192,6 +192,8 @@ jobs:
               uses: ./.github/actions/run-python-tests
               with:
                   artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-linux-py${{ matrix.python-version }}
+                  ext: so
                   python-version: ${{ matrix.python-version }}
 
     python-tests-windows:
@@ -210,4 +212,6 @@ jobs:
               uses: ./.github/actions/run-python-tests
               with:
                   artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-windows-py${{ matrix.python-version }}
+                  ext: pyd
                   python-version: ${{ matrix.python-version }}

@@ -1,11 +1,19 @@
 name: Run Python tests
 description: >
-  Download a pre-built wheel artifact, install it with pytest, and run
-  all tests marked with `minor` (no SC2 engine required).
+  Download a pre-built wheel artifact and the compiled C++ extensions artifact,
+  place the extensions into the source tree (so pytest's sys.path sees them),
+  install the wheel with dev dependencies, and run all tests marked with
+  `minor` (no SC2 engine required).
 
 inputs:
   artifact-name:
     description: Name of the wheel artifact to download and install
+    required: true
+  cc-artifact-name:
+    description: Name of the C++ extensions artifact produced by the build-cc action
+    required: true
+  ext:
+    description: Compiled extension suffix — "so" (Linux/macOS) or "pyd" (Windows)
     required: true
   python-version:
     description: Python version to use — must match the version the wheel was compiled for
@@ -25,6 +33,16 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: dist
+
+    - name: Download compiled extensions
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: ${{ inputs.cc-artifact-name }}
+        path: cc-dist
+
+    - name: Place compiled extensions into source tree
+      shell: bash
+      run: make place_extensions_local EXT=${{ inputs.ext }} SRCDIR=cc-dist
 
     - name: Install dev dependencies
       shell: bash
