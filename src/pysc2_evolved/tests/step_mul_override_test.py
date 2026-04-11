@@ -14,7 +14,7 @@
 # limitations under the License.
 """Test that stepping without observing works correctly for multiple players."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.env import sc2_env
 from pysc2_evolved.lib import actions
@@ -25,7 +25,8 @@ AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
 )
 
 
-class StepMulOverrideTest(utils.TestCase):
+@pytest.mark.sc2
+class TestStepMulOverride(utils.TestCase):
     def test_returns_game_loop_zero_on_first_step_despite_override(self):
         with sc2_env.SC2Env(
             map_name="DefeatRoaches",
@@ -35,7 +36,7 @@ class StepMulOverrideTest(utils.TestCase):
         ) as env:
             timestep = env.step(actions=[actions.FUNCTIONS.no_op()], step_mul=1234)
 
-            self.assertEqual(timestep[0].observation.game_loop[0], 0)
+            assert timestep[0].observation.game_loop[0] == 0
 
     def test_respects_override(self):
         with sc2_env.SC2Env(
@@ -49,10 +50,4 @@ class StepMulOverrideTest(utils.TestCase):
                 timestep = env.step(actions=[actions.FUNCTIONS.no_op()], step_mul=delta)
 
                 expected_game_loop += delta
-                self.assertEqual(
-                    timestep[0].observation.game_loop[0], expected_game_loop
-                )
-
-
-if __name__ == "__main__":
-    absltest.main()
+                assert timestep[0].observation.game_loop[0] == expected_game_loop

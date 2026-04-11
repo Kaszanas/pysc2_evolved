@@ -175,3 +175,43 @@ jobs:
               with:
                   artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
                   python-version: ${{ matrix.python-version }}
+
+    python-tests-linux:
+        needs: [package-wheel-linux]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Run Python tests
+              uses: ./.github/actions/run-python-tests
+              with:
+                  artifact-name: ci-wheel-ubuntu-latest-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-linux-py${{ matrix.python-version }}
+                  ext: so
+                  python-version: ${{ matrix.python-version }}
+
+    python-tests-windows:
+        needs: [package-wheel-windows]
+        runs-on: windows-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Run Python tests
+              uses: ./.github/actions/run-python-tests
+              with:
+                  artifact-name: ci-wheel-windows-latest-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-windows-py${{ matrix.python-version }}
+                  ext: pyd
+                  python-version: ${{ matrix.python-version }}

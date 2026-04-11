@@ -15,8 +15,8 @@
 
 import functools
 
+import pytest
 from absl import logging
-from absl.testing import absltest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import error_pb2 as sc_error
@@ -34,16 +34,14 @@ from pysc2_evolved.lib import (
 )
 
 
-class TestCase(absltest.TestCase):
+class TestCase:
     """A test base class that enables stopwatch profiling."""
 
-    def setUp(self):
-        super(TestCase, self).setUp()
+    def setup_method(self):
         stopwatch.sw.clear()
         stopwatch.sw.enable()
 
-    def tearDown(self):
-        super(TestCase, self).tearDown()
+    def teardown_method(self):
         s = str(stopwatch.sw)
         if s:
             logging.info("Stop watch profile:\n%s", s)
@@ -258,7 +256,7 @@ class GameReplayTestCase(TestCase):
             action
         )  # pytype: disable=attribute-error
         for result in response.result:
-            self.assertEqual(result, sc_error.Success)
+            assert result == sc_error.Success
 
     @only_in_game
     def debug(self, player=0, **kwargs):
@@ -295,28 +293,23 @@ class GameReplayTestCase(TestCase):
         )
 
     def assert_point(self, proto_pos, pos):
-        self.assertAlmostEqual(proto_pos.x, pos[0])
-        self.assertAlmostEqual(proto_pos.y, pos[1])
+        assert proto_pos.x == pytest.approx(pos[0])
+        assert proto_pos.y == pytest.approx(pos[1])
 
     def assert_layers(self, layers, pos, **kwargs):
         for k, v in sorted(kwargs.items()):
-            self.assertEqual(
-                layers[k, pos.y, pos.x],
-                v,
-                msg="%s[%s, %s]: expected: %s, got: %s"
-                % (k, pos.y, pos.x, v, layers[k, pos.y, pos.x]),
+            assert layers[k, pos.y, pos.x] == v, (
+                "%s[%s, %s]: expected: %s, got: %s"
+                % (k, pos.y, pos.x, v, layers[k, pos.y, pos.x])
             )
 
     def assert_unit(self, unit, **kwargs):
-        self.assertTrue(unit)
-        self.assertIsInstance(unit, sc_raw.Unit)
+        assert unit
+        assert isinstance(unit, sc_raw.Unit)
         for k, v in sorted(kwargs.items()):
             if k == "pos":
                 self.assert_point(unit.pos, v)
             else:
-                self.assertEqual(
-                    getattr(unit, k),
-                    v,
-                    msg="%s: expected: %s, got: %s\n%s"
-                    % (k, v, getattr(unit, k), unit),
+                assert getattr(unit, k) == v, (
+                    "%s: expected: %s, got: %s\n%s" % (k, v, getattr(unit, k), unit)
                 )

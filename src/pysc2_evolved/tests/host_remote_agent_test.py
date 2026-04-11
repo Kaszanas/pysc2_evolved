@@ -14,7 +14,7 @@
 # limitations under the License.
 """Test host_remote_agent.py."""
 
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -26,8 +26,9 @@ NUM_MATCHES = 2
 STEPS = 100
 
 
+@pytest.mark.sc2
 class TestHostRemoteAgent(utils.TestCase):
-    def testVsBot(self):
+    def test_vs_bot(self):
         bot_first = True
         for _ in range(NUM_MATCHES):
             with host_remote_agent.VsBot() as game:
@@ -53,7 +54,7 @@ class TestHostRemoteAgent(utils.TestCase):
                 controller.close()
                 bot_first = not bot_first
 
-    def testVsAgent(self):
+    def test_vs_agent(self):
         parallel = run_parallel.RunParallel()
         for _ in range(NUM_MATCHES):
             with host_remote_agent.VsAgent() as game:
@@ -86,7 +87,3 @@ class TestHostRemoteAgent(utils.TestCase):
                 parallel.run(c.close for c in controllers)
 
         parallel.shutdown()
-
-
-if __name__ == "__main__":
-    absltest.main()

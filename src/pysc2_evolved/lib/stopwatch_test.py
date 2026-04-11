@@ -17,7 +17,7 @@
 import os
 
 import mock
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.lib import stopwatch
 
@@ -28,34 +28,36 @@ def ham_dist(str1, str2):
     return sum(c1 != c2 for c1, c2 in zip(str1, str2))
 
 
-class StatTest(absltest.TestCase):
-    def testRange(self):
+@pytest.mark.minor
+class TestStat:
+    def test_range(self):
         stat = stopwatch.Stat()
         stat.add(1)
         stat.add(5)
         stat.add(3)
-        self.assertEqual(stat.num, 3)
-        self.assertEqual(stat.sum, 9)
-        self.assertEqual(stat.min, 1)
-        self.assertEqual(stat.max, 5)
-        self.assertEqual(stat.avg, 3)
+        assert stat.num == 3
+        assert stat.sum == 9
+        assert stat.min == 1
+        assert stat.max == 5
+        assert stat.avg == 3
 
-    def testParse(self):
+    def test_parse(self):
         stat = stopwatch.Stat()
         stat.add(1)
         stat.add(3)
         out = str(stat)
-        self.assertEqual(
-            out,
-            "sum: 4.0000, avg: 2.0000, dev: 1.0000, min: 1.0000, max: 3.0000, num: 2",
+        assert (
+            out
+            == "sum: 4.0000, avg: 2.0000, dev: 1.0000, min: 1.0000, max: 3.0000, num: 2"
         )
         # Allow a few small rounding errors
-        self.assertLess(ham_dist(out, str(stopwatch.Stat.parse(out))), 5)
+        assert ham_dist(out, str(stopwatch.Stat.parse(out))) < 5
 
 
-class StopwatchTest(absltest.TestCase):
+@pytest.mark.minor
+class TestStopwatch:
     @mock.patch("time.time")
-    def testStopwatch(self, mock_time):
+    def test_stopwatch(self, mock_time):
         mock_time.return_value = 0
         sw = stopwatch.StopWatch()
         with sw("one"):
@@ -82,38 +84,38 @@ class StopwatchTest(absltest.TestCase):
 
         # The names should be in sorted order.
         names = [line.split(None)[0] for line in out.splitlines()[1:]]
-        self.assertEqual(names, ["five", "four", "one", "two", "two.three"])
+        assert names == ["five", "four", "one", "two", "two.three"]
 
         one_line = out.splitlines()[3].split(None)
-        self.assertLess(one_line[5], one_line[6])  # min < max
-        self.assertEqual(one_line[7], "2")  # num
+        assert one_line[5] < one_line[6]  # min < max
+        assert one_line[7] == "2"  # num
         # Can't test the rest since they'll be flaky.
 
         # Allow a few small rounding errors for the round trip.
         round_trip = str(stopwatch.StopWatch.parse(out))
-        self.assertLess(ham_dist(out, round_trip), 15, "%s != %s" % (out, round_trip))
+        assert ham_dist(out, round_trip) < 15, "%s != %s" % (out, round_trip)
 
-    def testDivideZero(self):
+    def test_divide_zero(self):
         sw = stopwatch.StopWatch()
         with sw("zero"):
             pass
 
         # Just make sure this doesn't have a divide by 0 for when the total is 0.
-        self.assertIn("zero", str(sw))
+        assert "zero" in str(sw)
 
     @mock.patch.dict(os.environ, {"SC2_NO_STOPWATCH": "1"})
-    def testDecoratorDisabled(self):
+    def test_decorator_disabled(self):
         sw = stopwatch.StopWatch()
-        self.assertEqual(round, sw.decorate(round))
-        self.assertEqual(round, sw.decorate("name")(round))
+        assert round == sw.decorate(round)
+        assert round == sw.decorate("name")(round)
 
     @mock.patch.dict(os.environ, {"SC2_NO_STOPWATCH": ""})
-    def testDecoratorEnabled(self):
+    def test_decorator_enabled(self):
         sw = stopwatch.StopWatch()
-        self.assertNotEqual(round, sw.decorate(round))
-        self.assertNotEqual(round, sw.decorate("name")(round))
+        assert round != sw.decorate(round)
+        assert round != sw.decorate("name")(round)
 
-    def testSpeed(self):
+    def test_speed(self):
         count = 100
 
         def run():
@@ -138,7 +140,3 @@ class StopwatchTest(absltest.TestCase):
 
         # No asserts. Succeed but print the timings.
         print(sw)
-
-
-if __name__ == "__main__":
-    absltest.main()

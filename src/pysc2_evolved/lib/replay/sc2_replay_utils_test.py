@@ -14,13 +14,11 @@
 
 import os
 
-from absl import flags
-from absl.testing import absltest, parameterized
+import pytest
 
 from pysc2_evolved.lib import gfile, resources
 from pysc2_evolved.lib.replay import sc2_replay, sc2_replay_utils
 
-FLAGS = flags.FLAGS
 PATH = "pysc2_evolved/lib/replay/test_data"
 
 
@@ -37,16 +35,14 @@ def _read_skips(name):
         return [int(i) for i in f.readlines()[0].split(",")]
 
 
-class Sc2ReplayUtilsTest(parameterized.TestCase):
-    @parameterized.parameters(
-        ((f"replay_0{i}.SC2Replay", f"replay_0{i}.skips.txt") for i in range(1, 10))
+@pytest.mark.minor
+class TestSc2ReplayUtils:
+    @pytest.mark.parametrize(
+        "replay_name,skips_file",
+        [(f"replay_0{i}.SC2Replay", f"replay_0{i}.skips.txt") for i in range(1, 10)],
     )
     def test_raw_action_skips(self, replay_name, skips_file):
         replay = _read_replay(replay_name)
         skips = _read_skips(skips_file)
         result = sc2_replay_utils.raw_action_skips(replay)
-        self.assertEqual(result[1], skips)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert result[1] == skips

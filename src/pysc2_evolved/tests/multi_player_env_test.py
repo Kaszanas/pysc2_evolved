@@ -14,7 +14,7 @@
 # limitations under the License.
 """Test that the multiplayer environment works."""
 
-from absl.testing import absltest, parameterized
+import pytest
 from s2clientprotocol import common_pb2 as common_pb
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -23,22 +23,23 @@ from pysc2_evolved.env import run_loop, sc2_env
 from pysc2_evolved.tests import utils
 
 
-class TestMultiplayerEnv(parameterized.TestCase, utils.TestCase):
-    @parameterized.named_parameters(
-        (
-            "features",
+@pytest.mark.sc2
+@pytest.mark.parametrize(
+    "agent_interface_format",
+    [
+        pytest.param(
             sc2_env.AgentInterfaceFormat(
                 feature_dimensions=sc2_env.Dimensions(screen=84, minimap=64)
             ),
+            id="features",
         ),
-        (
-            "rgb",
+        pytest.param(
             sc2_env.AgentInterfaceFormat(
                 rgb_dimensions=sc2_env.Dimensions(screen=84, minimap=64)
             ),
+            id="rgb",
         ),
-        (
-            "features_and_rgb",
+        pytest.param(
             [
                 sc2_env.AgentInterfaceFormat(
                     feature_dimensions=sc2_env.Dimensions(screen=84, minimap=64)
@@ -47,9 +48,9 @@ class TestMultiplayerEnv(parameterized.TestCase, utils.TestCase):
                     rgb_dimensions=sc2_env.Dimensions(screen=128, minimap=32)
                 ),
             ],
+            id="features_and_rgb",
         ),
-        (
-            "passthrough_and_features",
+        pytest.param(
             [
                 sc_pb.InterfaceOptions(
                     raw=True,
@@ -64,8 +65,11 @@ class TestMultiplayerEnv(parameterized.TestCase, utils.TestCase):
                     feature_dimensions=sc2_env.Dimensions(screen=84, minimap=64)
                 ),
             ],
+            id="passthrough_and_features",
         ),
-    )
+    ],
+)
+class TestMultiplayerEnv(utils.TestCase):
     def test_multi_player_env(self, agent_interface_format):
         steps = 100
         step_mul = 16
@@ -89,7 +93,3 @@ class TestMultiplayerEnv(parameterized.TestCase, utils.TestCase):
                 for aif in agent_interface_format
             ]
             run_loop.run_loop(agents, env, steps)
-
-
-if __name__ == "__main__":
-    absltest.main()

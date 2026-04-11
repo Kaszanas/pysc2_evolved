@@ -14,13 +14,14 @@
 # limitations under the License.
 """Benchmark the ping rate of SC2."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved import run_configs
 from pysc2_evolved.lib import stopwatch
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestPing(utils.TestCase):
     def test_ping(self):
         count = 100
@@ -32,8 +33,4 @@ class TestPing(utils.TestCase):
             for _ in range(count):
                 controller.ping()
 
-        self.assertEqual(stopwatch.sw["ping"].num, count)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert stopwatch.sw["ping"].num == count

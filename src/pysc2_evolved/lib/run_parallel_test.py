@@ -16,7 +16,7 @@
 
 import threading
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.lib import run_parallel
 
@@ -49,26 +49,27 @@ def bad():
     raise ValueError()
 
 
-class RunParallelTest(absltest.TestCase):
+@pytest.mark.minor
+class TestRunParallel:
     def test_returns_expected_values(self):
         pool = run_parallel.RunParallel()
         out = pool.run([int])
-        self.assertListEqual(out, [0])
+        assert out == [0]
         out = pool.run([lambda: 1, lambda: 2, lambda: "asdf", lambda: {1: 2}])
-        self.assertListEqual(out, [1, 2, "asdf", {1: 2}])
+        assert out == [1, 2, "asdf", {1: 2}]
         pool.shutdown()
 
     def test_run_in_parallel(self):
         b = Barrier(3)
         pool = run_parallel.RunParallel()
         out = pool.run([b.wait, b.wait, b.wait])
-        self.assertCountEqual(out, [0, 1, 2])
+        assert sorted(out) == [0, 1, 2]
         pool.shutdown()
 
     def test_avoids_deadlock(self):
         b = Barrier(2)
         pool = run_parallel.RunParallel(timeout=2)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             pool.run([int, b.wait, bad])
         # Release the thread waiting on the barrier so the process can exit cleanly.
         b.clear()
@@ -77,20 +78,16 @@ class RunParallelTest(absltest.TestCase):
     def test_exception(self):
         pool = run_parallel.RunParallel()
         out = pool.run([lambda: 1, ValueError])
-        self.assertEqual(out[0], 1)
-        self.assertIsInstance(out[1], ValueError)
-        with self.assertRaises(ValueError):
+        assert out[0] == 1
+        assert isinstance(out[1], ValueError)
+        with pytest.raises(ValueError):
             pool.run([bad])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             pool.run([int, bad])
         pool.shutdown()
 
     def test_partial(self):
         pool = run_parallel.RunParallel()
         out = pool.run((max, 0, i - 2) for i in range(5))
-        self.assertListEqual(out, [0, 0, 0, 1, 2])
+        assert out == [0, 0, 0, 1, 2]
         pool.shutdown()
-
-
-if __name__ == "__main__":
-    absltest.main()

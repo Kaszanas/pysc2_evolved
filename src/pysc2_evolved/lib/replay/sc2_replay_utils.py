@@ -136,7 +136,7 @@ def get_player_ids(user_id_to_object_mapping: Dict[int, PlayerIDs]):
     return player_id_to_info_mapping
 
 
-def get_active_players(replay: sc2_replay.SC2Replay) -> Dict[str, PlayerIDs]:
+def get_active_players(replay: sc2_replay.SC2Replay) -> Dict[int, PlayerIDs]:
     slots = get_init_data_slot_list(replay=replay)
     details_player_list = get_detail_player_list(replay=replay)
 
@@ -160,9 +160,26 @@ def get_active_players(replay: sc2_replay.SC2Replay) -> Dict[str, PlayerIDs]:
 
         # This should be the user ID of the participating player:
         user_id = event["m_userId"]
-        active_player_object = user_id_to_object_mapping[user_id]
+        player_id = event.get("m_playerId")
 
-        player_id = event["m_playerId"]
+        # Skip observers, computer players, and any other non-active users
+        # (e.g. m_userId=0 for observer slots).  Active players always have
+        # m_playerId >= 1; observers have m_playerId == 0 or None.
+        # Note: previously this filter relied on user_id being absent from the
+        # toon-matched map, but toon handles are often empty in replays, so the
+        # toon map produced no real user_id keys, causing every event to be
+        # skipped.
+        if not player_id:
+            continue
+
+        # Use the existing PlayerIDs object from toon matching if available;
+        # otherwise create a new one (handles replays with empty toon handles).
+        if user_id in user_id_to_object_mapping:
+            active_player_object = user_id_to_object_mapping[user_id]
+        else:
+            active_player_object = PlayerIDs(user_id=user_id)
+            user_id_to_object_mapping[user_id] = active_player_object
+
         active_player_object.player_id = player_id
 
         # slot_id = event["m_slotId"]

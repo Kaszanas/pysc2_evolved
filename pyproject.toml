@@ -12,20 +12,23 @@ dependencies = [
     "click>=8.1.8",
     "deepdiff>=8.4.2",
     "dm-env>=1.6",
+    "dm-env-rpc>=1.1.7",
     "enum34>=1.1.10",
     "mock>=5.2.0",
     "mpyq>=0.2.5",
     "numpy>=1.10",
     "portpicker>=1.6.0",
-    "protobuf<=3.20.3",
+    "protobuf>=6,<8",
     "pygame>=2.6.1",
     "python-dotenv>=1.2.1",
     "requests>=2.32.3",
-    "s2clientprotocol>=5.0.15.95299.0",
+    "pys2clientprotocol>=1.0.2",
     "s2protocol>=5.0.15.95299.0",
-    "sk-video>=1.1.10",
     "tqdm>=4.67.1",
+    "typing-extensions>=4.15.0",
     "websocket-client>=1.8.0",
+    "imageio>=2.37.3",
+    "imageio-ffmpeg>=0.6.0",
 ]
 
 [tool.commitizen]
@@ -37,7 +40,24 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["commitizen>=4.6.2", "pre-commit>=4.2.0", "ruff>=0.11.8"]
+dev = [
+    "commitizen>=4.6.2",
+    "pre-commit>=4.2.0",
+    "pytest>=9.0.3",
+    "ruff>=0.11.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src"]
+python_files = ["*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--import-mode=importlib"
+norecursedirs = ["bazel-*", ".venv", "dist", "build", "__pycache__"]
+markers = [
+    "minor: tests that do not require a running SC2 game engine (safe for CI)",
+    "sc2: tests that require a running StarCraft II game engine",
+]
 
 [tool.ruff.lint]
 extend-select = ["I"]

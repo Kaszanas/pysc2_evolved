@@ -14,7 +14,7 @@
 # limitations under the License.
 """Verify that we blow up if SC2 thinks we did something wrong."""
 
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -23,15 +23,16 @@ from pysc2_evolved.lib import protocol, remote_controller
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestProtocolError(utils.TestCase):
     """Verify that we blow up if SC2 thinks we did something wrong."""
 
     def test_error(self):
         with run_configs.get().start(want_rgb=False) as controller:
-            with self.assertRaises(remote_controller.RequestError):
+            with pytest.raises(remote_controller.RequestError):
                 controller.create_game(sc_pb.RequestCreateGame())  # Missing map, etc.
 
-            with self.assertRaises(protocol.ProtocolError):
+            with pytest.raises(protocol.ProtocolError):
                 controller.join_game(sc_pb.RequestJoinGame())  # No game to join.
 
     def test_replay_a_replay(self):
@@ -69,10 +70,6 @@ class TestProtocolError(utils.TestCase):
             controller.start_replay(start_replay)
             controller.step(1000)
             obs2 = controller.observe()
-            self.assertEqual(obs.observation.game_loop, obs2.observation.game_loop)
-            with self.assertRaises(protocol.ProtocolError):
+            assert obs.observation.game_loop == obs2.observation.game_loop
+            with pytest.raises(protocol.ProtocolError):
                 controller.save_replay()
-
-
-if __name__ == "__main__":
-    absltest.main()

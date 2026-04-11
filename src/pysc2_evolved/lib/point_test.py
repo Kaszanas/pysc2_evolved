@@ -14,7 +14,7 @@
 # limitations under the License.
 """Tests for the point library."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.lib import point
 
@@ -25,177 +25,175 @@ class FakePoint(object):
         self.y = 8
 
 
-class PointTest(absltest.TestCase):
-    def testBuild(self):
-        self.assertEqual(point.Point(5, 8), point.Point.build(FakePoint()))
+@pytest.mark.minor
+class TestPoint:
+    def test_build(self):
+        assert point.Point(5, 8) == point.Point.build(FakePoint())
 
-    def testAssignTo(self):
+    def test_assign_to(self):
         f = FakePoint()
-        self.assertEqual(5, f.x)
-        self.assertEqual(8, f.y)
+        assert f.x == 5
+        assert f.y == 8
         point.Point(1, 2).assign_to(f)
-        self.assertEqual(1, f.x)
-        self.assertEqual(2, f.y)
+        assert f.x == 1
+        assert f.y == 2
 
-    def testDist(self):
+    def test_dist(self):
         a = point.Point(1, 1)
         b = point.Point(4, 5)
-        self.assertEqual(5, a.dist(b))
+        assert a.dist(b) == 5
 
-    def testDistSq(self):
+    def test_dist_sq(self):
         a = point.Point(1, 1)
         b = point.Point(4, 5)
-        self.assertEqual(25, a.dist_sq(b))
+        assert a.dist_sq(b) == 25
 
-    def testLen(self):
+    def test_len(self):
         p = point.Point(3, 4)
-        self.assertEqual(5, p.len())
+        assert p.len() == 5
 
-    def testScale(self):
+    def test_scale(self):
         p = point.Point(3, 4)
-        self.assertAlmostEqual(2, p.scale(2).len())
+        assert p.scale(2).len() == pytest.approx(2)
 
-    def testScaleMaxSize(self):
+    def test_scale_max_size(self):
         p = point.Point(3, 4)
-        self.assertEqual(p, p.scale_max_size(p))
-        self.assertEqual(point.Point(6, 8), p.scale_max_size(point.Point(8, 8)))
-        self.assertEqual(point.Point(6, 8), p.scale_max_size(point.Point(100, 8)))
-        self.assertEqual(point.Point(6, 8), p.scale_max_size(point.Point(6, 100)))
+        assert p == p.scale_max_size(p)
+        assert point.Point(6, 8) == p.scale_max_size(point.Point(8, 8))
+        assert point.Point(6, 8) == p.scale_max_size(point.Point(100, 8))
+        assert point.Point(6, 8) == p.scale_max_size(point.Point(6, 100))
 
-    def testScaleMinSize(self):
+    def test_scale_min_size(self):
         p = point.Point(3, 4)
-        self.assertEqual(p, p.scale_min_size(p))
-        self.assertEqual(point.Point(6, 8), p.scale_min_size(point.Point(6, 6)))
-        self.assertEqual(point.Point(6, 8), p.scale_min_size(point.Point(2, 8)))
-        self.assertEqual(point.Point(6, 8), p.scale_min_size(point.Point(6, 2)))
+        assert p == p.scale_min_size(p)
+        assert point.Point(6, 8) == p.scale_min_size(point.Point(6, 6))
+        assert point.Point(6, 8) == p.scale_min_size(point.Point(2, 8))
+        assert point.Point(6, 8) == p.scale_min_size(point.Point(6, 2))
 
-    def testMinDim(self):
-        self.assertEqual(5, point.Point(5, 10).min_dim())
+    def test_min_dim(self):
+        assert point.Point(5, 10).min_dim() == 5
 
-    def testMaxDim(self):
-        self.assertEqual(10, point.Point(5, 10).max_dim())
+    def test_max_dim(self):
+        assert point.Point(5, 10).max_dim() == 10
 
-    def testTranspose(self):
-        self.assertEqual(point.Point(4, 3), point.Point(3, 4).transpose())
+    def test_transpose(self):
+        assert point.Point(4, 3) == point.Point(3, 4).transpose()
 
-    def testRound(self):
+    def test_round(self):
         p = point.Point(1.3, 2.6).round()
-        self.assertEqual(point.Point(1, 3), p)
-        self.assertIsInstance(p.x, int)
-        self.assertIsInstance(p.y, int)
+        assert point.Point(1, 3) == p
+        assert isinstance(p.x, int)
+        assert isinstance(p.y, int)
 
-    def testCeil(self):
+    def test_ceil(self):
         p = point.Point(1.3, 2.6).ceil()
-        self.assertEqual(point.Point(2, 3), p)
-        self.assertIsInstance(p.x, int)
-        self.assertIsInstance(p.y, int)
+        assert point.Point(2, 3) == p
+        assert isinstance(p.x, int)
+        assert isinstance(p.y, int)
 
-    def testFloor(self):
+    def test_floor(self):
         p = point.Point(1.3, 2.6).floor()
-        self.assertEqual(point.Point(1, 2), p)
-        self.assertIsInstance(p.x, int)
-        self.assertIsInstance(p.y, int)
+        assert point.Point(1, 2) == p
+        assert isinstance(p.x, int)
+        assert isinstance(p.y, int)
 
-    def testRotate(self):
+    def test_rotate(self):
         p = point.Point(0, 100)
-        self.assertEqual(point.Point(-100, 0), p.rotate_deg(90).round())
-        self.assertEqual(point.Point(100, 0), p.rotate_deg(-90).round())
-        self.assertEqual(point.Point(0, -100), p.rotate_deg(180).round())
+        assert point.Point(-100, 0) == p.rotate_deg(90).round()
+        assert point.Point(100, 0) == p.rotate_deg(-90).round()
+        assert point.Point(0, -100) == p.rotate_deg(180).round()
 
-    def testContainedCircle(self):
-        self.assertTrue(point.Point(2, 2).contained_circle(point.Point(1, 1), 2))
-        self.assertFalse(point.Point(2, 2).contained_circle(point.Point(1, 1), 0.5))
+    def test_contained_circle(self):
+        assert point.Point(2, 2).contained_circle(point.Point(1, 1), 2)
+        assert not point.Point(2, 2).contained_circle(point.Point(1, 1), 0.5)
 
-    def testBound(self):
+    def test_bound(self):
         tl = point.Point(1, 2)
         br = point.Point(3, 4)
-        self.assertEqual(tl, point.Point(0, 0).bound(tl, br))
-        self.assertEqual(br, point.Point(10, 10).bound(tl, br))
-        self.assertEqual(point.Point(1.5, 2), point.Point(1.5, 0).bound(tl, br))
+        assert tl == point.Point(0, 0).bound(tl, br)
+        assert br == point.Point(10, 10).bound(tl, br)
+        assert point.Point(1.5, 2) == point.Point(1.5, 0).bound(tl, br)
 
 
-class RectTest(absltest.TestCase):
-    def testInit(self):
+@pytest.mark.minor
+class TestRect:
+    def test_init(self):
         r = point.Rect(1, 2, 3, 4)
-        self.assertEqual(r.t, 1)
-        self.assertEqual(r.l, 2)
-        self.assertEqual(r.b, 3)
-        self.assertEqual(r.r, 4)
-        self.assertEqual(r.tl, point.Point(2, 1))
-        self.assertEqual(r.tr, point.Point(4, 1))
-        self.assertEqual(r.bl, point.Point(2, 3))
-        self.assertEqual(r.br, point.Point(4, 3))
+        assert r.t == 1
+        assert r.l == 2
+        assert r.b == 3
+        assert r.r == 4
+        assert r.tl == point.Point(2, 1)
+        assert r.tr == point.Point(4, 1)
+        assert r.bl == point.Point(2, 3)
+        assert r.br == point.Point(4, 3)
 
-    def testInitBad(self):
-        with self.assertRaises(TypeError):
+    def test_init_bad(self):
+        with pytest.raises(TypeError):
             point.Rect(4, 3, 2, 1)  # require t <= b, l <= r
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             point.Rect(1)
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             point.Rect(1, 2, 3)
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             point.Rect()
 
-    def testInitOnePoint(self):
+    def test_init_one_point(self):
         r = point.Rect(point.Point(1, 2))
-        self.assertEqual(r.t, 0)
-        self.assertEqual(r.l, 0)
-        self.assertEqual(r.b, 2)
-        self.assertEqual(r.r, 1)
-        self.assertEqual(r.tl, point.Point(0, 0))
-        self.assertEqual(r.tr, point.Point(1, 0))
-        self.assertEqual(r.bl, point.Point(0, 2))
-        self.assertEqual(r.br, point.Point(1, 2))
-        self.assertEqual(r.size, point.Point(1, 2))
-        self.assertEqual(r.center, point.Point(1, 2) / 2)
-        self.assertEqual(r.area, 2)
+        assert r.t == 0
+        assert r.l == 0
+        assert r.b == 2
+        assert r.r == 1
+        assert r.tl == point.Point(0, 0)
+        assert r.tr == point.Point(1, 0)
+        assert r.bl == point.Point(0, 2)
+        assert r.br == point.Point(1, 2)
+        assert r.size == point.Point(1, 2)
+        assert r.center == point.Point(1, 2) / 2
+        assert r.area == 2
 
-    def testInitTwoPoints(self):
+    def test_init_two_points(self):
         r = point.Rect(point.Point(1, 2), point.Point(3, 4))
-        self.assertEqual(r.t, 2)
-        self.assertEqual(r.l, 1)
-        self.assertEqual(r.b, 4)
-        self.assertEqual(r.r, 3)
-        self.assertEqual(r.tl, point.Point(1, 2))
-        self.assertEqual(r.tr, point.Point(3, 2))
-        self.assertEqual(r.bl, point.Point(1, 4))
-        self.assertEqual(r.br, point.Point(3, 4))
-        self.assertEqual(r.size, point.Point(2, 2))
-        self.assertEqual(r.center, point.Point(2, 3))
-        self.assertEqual(r.area, 4)
+        assert r.t == 2
+        assert r.l == 1
+        assert r.b == 4
+        assert r.r == 3
+        assert r.tl == point.Point(1, 2)
+        assert r.tr == point.Point(3, 2)
+        assert r.bl == point.Point(1, 4)
+        assert r.br == point.Point(3, 4)
+        assert r.size == point.Point(2, 2)
+        assert r.center == point.Point(2, 3)
+        assert r.area == 4
 
-    def testInitTwoPointsReversed(self):
+    def test_init_two_points_reversed(self):
         r = point.Rect(point.Point(3, 4), point.Point(1, 2))
-        self.assertEqual(r.t, 2)
-        self.assertEqual(r.l, 1)
-        self.assertEqual(r.b, 4)
-        self.assertEqual(r.r, 3)
-        self.assertEqual(r.tl, point.Point(1, 2))
-        self.assertEqual(r.tr, point.Point(3, 2))
-        self.assertEqual(r.bl, point.Point(1, 4))
-        self.assertEqual(r.br, point.Point(3, 4))
-        self.assertEqual(r.size, point.Point(2, 2))
-        self.assertEqual(r.center, point.Point(2, 3))
-        self.assertEqual(r.area, 4)
+        assert r.t == 2
+        assert r.l == 1
+        assert r.b == 4
+        assert r.r == 3
+        assert r.tl == point.Point(1, 2)
+        assert r.tr == point.Point(3, 2)
+        assert r.bl == point.Point(1, 4)
+        assert r.br == point.Point(3, 4)
+        assert r.size == point.Point(2, 2)
+        assert r.center == point.Point(2, 3)
+        assert r.area == 4
 
-    def testArea(self):
+    def test_area(self):
         r = point.Rect(point.Point(1, 1), point.Point(3, 4))
-        self.assertEqual(r.area, 6)
+        assert r.area == 6
 
-    def testContains(self):
+    def test_contains(self):
         r = point.Rect(point.Point(1, 1), point.Point(3, 3))
-        self.assertTrue(r.contains_point(point.Point(2, 2)))
-        self.assertFalse(r.contains_circle(point.Point(2, 2), 5))
-        self.assertFalse(r.contains_point(point.Point(4, 4)))
-        self.assertFalse(r.contains_circle(point.Point(4, 4), 5))
+        assert r.contains_point(point.Point(2, 2))
+        assert not r.contains_circle(point.Point(2, 2), 5)
+        assert not r.contains_point(point.Point(4, 4))
+        assert not r.contains_circle(point.Point(4, 4), 5)
 
-    def testIntersectsCircle(self):
+    def test_intersects_circle(self):
         r = point.Rect(point.Point(1, 1), point.Point(3, 3))
-        self.assertFalse(r.intersects_circle(point.Point(0, 0), 0.5))
-        self.assertFalse(r.intersects_circle(point.Point(0, 0), 1))
-        self.assertTrue(r.intersects_circle(point.Point(0, 0), 1.5))
-        self.assertTrue(r.intersects_circle(point.Point(0, 0), 2))
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert not r.intersects_circle(point.Point(0, 0), 0.5)
+        assert not r.intersects_circle(point.Point(0, 0), 1)
+        assert r.intersects_circle(point.Point(0, 0), 1.5)
+        assert r.intersects_circle(point.Point(0, 0), 2)

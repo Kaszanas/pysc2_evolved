@@ -18,7 +18,7 @@ Here we verify that the observations processed by replays match the original
 observations of the gameplay.
 """
 
-from absl.testing import absltest
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
@@ -169,7 +169,8 @@ class GameController(object):
         self.close()
 
 
-class ReplayObsTest(utils.TestCase):
+@pytest.mark.sc2
+class TestReplayObs(utils.TestCase):
     def _get_replay_data(self, controller, config):
         """Runs a replay to get the replay data."""
         f = features.features_from_game_info(game_info=controller.game_info())
@@ -189,7 +190,7 @@ class ReplayObsTest(utils.TestCase):
                 # at frame 2.
                 last_actions = [actions.FUNCTIONS.move_camera.id]
 
-            self.assertEqual(last_actions, list(obs.last_actions))
+            assert last_actions == list(obs.last_actions)
 
             unit_type = obs.feature_screen.unit_type
             observations[o.game_loop] = unit_type
@@ -205,7 +206,7 @@ class ReplayObsTest(utils.TestCase):
 
                 # Ensure action is available.
                 # If a build action is available, we have managed to target an SCV.
-                self.assertIn(func.function, obs.available_actions)
+                assert func.function in obs.available_actions
 
                 if func.function in (
                     actions.FUNCTIONS.Build_SupplyDepot_screen.id,
@@ -213,7 +214,7 @@ class ReplayObsTest(utils.TestCase):
                 ):
                     # Ensure we can build on that position.
                     x, y = func.arguments[1]
-                    self.assertEqual(_EMPTY, unit_type[y, x])
+                    assert _EMPTY == unit_type[y, x]
 
                 action = f.transform_action(o, func)
                 last_actions = [func.function]
@@ -237,12 +238,11 @@ class ReplayObsTest(utils.TestCase):
                 break
 
             unit_type = obs.feature_screen.unit_type
-            self.assertEqual(
-                tuple(observations[o.observation.game_loop].flatten()),
-                tuple(unit_type.flatten()),
+            assert tuple(observations[o.observation.game_loop].flatten()) == tuple(
+                unit_type.flatten()
             )
 
-            self.assertIn(len(o.actions), (0, 1), "Expected 0 or 1 action")
+            assert len(o.actions) in (0, 1), "Expected 0 or 1 action"
 
             if o.actions:
                 func = f.reverse_action(o.actions[0])
@@ -257,14 +257,14 @@ class ReplayObsTest(utils.TestCase):
                 if o.observation.game_loop == 2:
                     # Center camera is initiated automatically by the game and reported
                     # at frame 2.
-                    self.assertEqual(actions.FUNCTIONS.move_camera.id, func.function)
+                    assert actions.FUNCTIONS.move_camera.id == func.function
                     continue
 
-                self.assertEqual(func.function, executed_func.function)
+                assert func.function == executed_func.function
                 if func.function != actions.FUNCTIONS.select_point.id:
                     # select_point likes to return Toggle instead of Select.
-                    self.assertEqual(func.arguments, executed_func.arguments)
-                self.assertEqual(func.function, obs.last_actions[0])
+                    assert func.arguments == executed_func.arguments
+                assert func.function == obs.last_actions[0]
 
             controller.step()
 
@@ -281,7 +281,3 @@ class ReplayObsTest(utils.TestCase):
 
             game_controller.start_replay(replay_data)
             self._process_replay(game_controller.controller, observations, config)
-
-
-if __name__ == "__main__":
-    absltest.main()

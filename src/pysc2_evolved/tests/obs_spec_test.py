@@ -14,13 +14,14 @@
 # limitations under the License.
 """Verify that the observations match the observation spec."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.agents import random_agent
 from pysc2_evolved.env import sc2_env
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestObservationSpec(utils.TestCase):
     def test_observation_matches_obs_spec(self):
         with sc2_env.SC2Env(
@@ -34,13 +35,13 @@ class TestObservationSpec(utils.TestCase):
             ),
         ) as env:
             multiplayer_obs_spec = env.observation_spec()
-            self.assertIsInstance(multiplayer_obs_spec, tuple)
-            self.assertLen(multiplayer_obs_spec, 1)
+            assert isinstance(multiplayer_obs_spec, tuple)
+            assert len(multiplayer_obs_spec) == 1
             obs_spec = multiplayer_obs_spec[0]
 
             multiplayer_action_spec = env.action_spec()
-            self.assertIsInstance(multiplayer_action_spec, tuple)
-            self.assertLen(multiplayer_action_spec, 1)
+            assert isinstance(multiplayer_action_spec, tuple)
+            assert len(multiplayer_action_spec) == 1
             action_spec = multiplayer_action_spec[0]
 
             agent = random_agent.RandomAgent()
@@ -49,11 +50,11 @@ class TestObservationSpec(utils.TestCase):
             multiplayer_obs = env.reset()
             agent.reset()
             for _ in range(100):
-                self.assertIsInstance(multiplayer_obs, tuple)
-                self.assertLen(multiplayer_obs, 1)
+                assert isinstance(multiplayer_obs, tuple)
+                assert len(multiplayer_obs) == 1
                 raw_obs = multiplayer_obs[0]
                 obs = raw_obs.observation
-                self.check_observation_matches_spec(obs, obs_spec)
+                self._check_observation_matches_spec(obs, obs_spec)
 
                 act = agent.step(raw_obs)
                 multiplayer_act = (act,)
@@ -78,12 +79,12 @@ class TestObservationSpec(utils.TestCase):
             ],
         ) as env:
             obs_specs = env.observation_spec()
-            self.assertIsInstance(obs_specs, tuple)
-            self.assertLen(obs_specs, 2)
+            assert isinstance(obs_specs, tuple)
+            assert len(obs_specs) == 2
 
             actions_specs = env.action_spec()
-            self.assertIsInstance(actions_specs, tuple)
-            self.assertLen(actions_specs, 2)
+            assert isinstance(actions_specs, tuple)
+            assert len(actions_specs) == 2
 
             agents = []
             for obs_spec, action_spec in zip(obs_specs, actions_specs):
@@ -94,35 +95,31 @@ class TestObservationSpec(utils.TestCase):
 
             time_steps = env.reset()
             for _ in range(100):
-                self.assertIsInstance(time_steps, tuple)
-                self.assertLen(time_steps, 2)
+                assert isinstance(time_steps, tuple)
+                assert len(time_steps) == 2
 
                 actions = []
                 for i, agent in enumerate(agents):
                     time_step = time_steps[i]
                     obs = time_step.observation
-                    self.check_observation_matches_spec(obs, obs_specs[i])
+                    self._check_observation_matches_spec(obs, obs_specs[i])
                     actions.append(agent.step(time_step))
 
                 time_steps = env.step(actions)
 
-    def check_observation_matches_spec(self, obs, obs_spec):
-        self.assertCountEqual(obs_spec.keys(), obs.keys())
+    def _check_observation_matches_spec(self, obs, obs_spec):
+        assert set(obs_spec.keys()) == set(obs.keys())
         for k, o in obs.items():
             if k == "map_name":
-                self.assertIsInstance(o, str)
+                assert isinstance(o, str)
                 continue
 
             descr = "%s: spec: %s != obs: %s" % (k, obs_spec[k], o.shape)
 
             if o.shape == (0,):  # Empty tensor can't have a shape.
-                self.assertIn(0, obs_spec[k], descr)
+                assert 0 in obs_spec[k], descr
             else:
-                self.assertEqual(len(obs_spec[k]), len(o.shape), descr)
+                assert len(obs_spec[k]) == len(o.shape), descr
                 for a, b in zip(obs_spec[k], o.shape):
                     if a != 0:
-                        self.assertEqual(a, b, descr)
-
-
-if __name__ == "__main__":
-    absltest.main()
+                        assert a == b, descr

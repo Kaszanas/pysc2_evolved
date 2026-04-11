@@ -7,6 +7,10 @@ DOCKER_TAG = pysc2_evolved
 # Python variables:
 PYTHON_VERSION = 3.11
 
+# Cross-platform file utilities (work on Windows with chocolatey make).
+CP    = python scripts/cp.py
+MKDIR = python scripts/mkdir_p.py
+
 
 
 .PHONY: docker_build
@@ -79,42 +83,106 @@ bazel_build_uint8_lookup_local: ## Builds the uint8_lookup pybind11 extension lo
 	$(BAZELISK) build $(BAZEL_FLAGS) $(BAZEL_PY_FLAG) \
 	//src/pysc2_evolved/env/converter/cc/game_data/python:uint8_lookup
 
+.PHONY: bazel_build_python_protos_local
+bazel_build_python_protos_local: ## Builds Python proto bindings for the converter and game_data packages via Bazelisk.
+	$(BAZELISK) build $(BAZEL_FLAGS) \
+	//src/pysc2_evolved/env/converter/proto:converter_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:buffs_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:units_py_pb2 \
+	//src/pysc2_evolved/env/converter/cc/game_data/proto:upgrades_py_pb2
+
 .PHONY: bazel_build_extensions_local
-bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local ## Builds both pybind11 extensions (converter + uint8_lookup) locally via Bazelisk.
+bazel_build_extensions_local: bazel_build_converter_local bazel_build_uint8_lookup_local bazel_build_python_protos_local ## Builds both pybind11 extensions (converter + uint8_lookup) and Python proto bindings locally via Bazelisk.
+
+# Bazel places py_proto_library outputs inside _virtual_imports/<proto_name>/ due to
+# strip_import_prefix = "/src" on the proto_library targets.
+PROTO_BIN = bazel-bin/src/pysc2_evolved/env/converter
+PROTO_VIRTUAL_CONVERTER = $(PROTO_BIN)/proto/_virtual_imports/converter_proto/pysc2_evolved/env/converter/proto
+PROTO_VIRTUAL_GAME_DATA  = $(PROTO_BIN)/cc/game_data/proto/_virtual_imports
 
 # Wheel packaging
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make copy_extensions_local EXT=so
 .PHONY: copy_extensions_local
-copy_extensions_local: ## Copies compiled extensions from bazel-bin into the source tree (local builds). Requires EXT=so|pyd.
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
+copy_extensions_local: ## Copies compiled extensions and Python proto bindings from bazel-bin into the source tree (local builds). Requires EXT=so|pyd.
+	$(CP) bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/python/converter.$(EXT)
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
+	$(CP) bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT)
+	$(CP) $(PROTO_VIRTUAL_CONVERTER)/converter_pb2.py \
+	   src/pysc2_evolved/env/converter/proto/converter_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/buffs_proto/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/units_proto/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/upgrades_proto/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # Example: make stage_extensions_local EXT=so
 .PHONY: stage_extensions_local
-stage_extensions_local: ## Copies compiled extensions from bazel-bin into cc-dist/ for CI artifact upload. Requires EXT=so|pyd.
-	mkdir -p cc-dist
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
+stage_extensions_local: ## Copies compiled extensions and Python proto bindings from bazel-bin into cc-dist/ for CI artifact upload. Requires EXT=so|pyd.
+	$(MKDIR) cc-dist
+	$(CP) bazel-bin/src/pysc2_evolved/env/converter/cc/python/converter.$(EXT) \
 	   cc-dist/converter.$(EXT)
-	cp bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
+	$(CP) bazel-bin/src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT) \
 	   cc-dist/uint8_lookup.$(EXT)
+	$(CP) $(PROTO_VIRTUAL_CONVERTER)/converter_pb2.py \
+	   cc-dist/converter_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/buffs_proto/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py \
+	   cc-dist/buffs_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/units_proto/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py \
+	   cc-dist/units_pb2.py
+	$(CP) $(PROTO_VIRTUAL_GAME_DATA)/upgrades_proto/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py \
+	   cc-dist/upgrades_pb2.py
 
 # EXT must be set by the caller: "so" on Linux/macOS, "pyd" on Windows.
 # SRCDIR must be set to the directory containing the pre-built extensions.
 # Example: make place_extensions_local EXT=so SRCDIR=cc-dist
 .PHONY: place_extensions_local
-place_extensions_local: ## Places pre-built extensions from SRCDIR into the source tree (CI packaging). Requires EXT=so|pyd SRCDIR=path.
-	cp $(SRCDIR)/converter.$(EXT) \
+place_extensions_local: ## Places pre-built extensions and Python proto bindings from SRCDIR into the source tree (CI packaging). Requires EXT=so|pyd SRCDIR=path.
+	$(CP) $(SRCDIR)/converter.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/python/converter.$(EXT)
-	cp $(SRCDIR)/uint8_lookup.$(EXT) \
+	$(CP) $(SRCDIR)/uint8_lookup.$(EXT) \
 	   src/pysc2_evolved/env/converter/cc/game_data/python/uint8_lookup.$(EXT)
+	$(CP) $(SRCDIR)/converter_pb2.py \
+	   src/pysc2_evolved/env/converter/proto/converter_pb2.py
+	$(CP) $(SRCDIR)/buffs_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/buffs_pb2.py
+	$(CP) $(SRCDIR)/units_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/units_pb2.py
+	$(CP) $(SRCDIR)/upgrades_pb2.py \
+	   src/pysc2_evolved/env/converter/cc/game_data/proto/upgrades_pb2.py
+
+.PHONY: clean_dist
+clean_dist: ## Removes all wheels from dist/ to prevent stale wheel clashes on reinstall.
+	python -c "import glob, os; [os.remove(f) for f in glob.glob('dist/*.whl')]"
 
 .PHONY: build_wheel_local
-build_wheel_local: ## Builds a platform-specific wheel via uv.
+build_wheel_local: clean_dist ## Builds a platform-specific wheel via uv (clears dist/ first).
 	uv build --wheel
+
+# Test targets:
+.PHONY: test_minor
+test_minor: ## Runs minor-marked pytest tests using the editable install. Proto-dependent tests also require Bazel artifacts staged via copy_extensions_local.
+	uv run python -m pytest -m minor --tb=short src/
+
+.PHONY: test_minor_ci
+test_minor_ci: ## Installs dist/*.whl and runs minor tests exactly as CI does (wheel must already be built). Always restores the editable install on completion or failure.
+	uv sync --no-install-project --group dev
+	python scripts/install_wheel.py --force-reinstall
+	python scripts/run_tests_and_restore.py -m minor --tb=short src/
+
+# EXT must be set: "so" on Linux/macOS, "pyd" on Windows.
+# Example: make test_minor_full EXT=pyd
+.PHONY: test_minor_full
+test_minor_full: bazel_build_extensions_local ## Full end-to-end local CI run: build Bazel artifacts → run C++ tests → copy to src/ → build wheel → install wheel → run minor pytest tests → restore editable install. Requires EXT=so|pyd. Mirrors the CI pipeline exactly.
+	$(MAKE) bazel_test_converter_local
+	$(MAKE) copy_extensions_local EXT=$(EXT)
+	$(MAKE) build_wheel_local
+	uv sync --no-install-project --group dev
+	python scripts/install_wheel.py --force-reinstall
+	python scripts/run_tests_and_restore.py -m minor --tb=short src/
 
 # Wheel verification targets:
 .PHONY: smoke_test_local
@@ -123,7 +191,7 @@ smoke_test_local: ## Verifies pybind11 extensions are importable and execute C++
 
 .PHONY: install_wheel_local
 install_wheel_local: ## Installs the wheel from dist/ into the current Python environment.
-	uv pip install dist/*.whl
+	python scripts/install_wheel.py
 
 .PHONY: verify_wheel_local
 verify_wheel_local: install_wheel_local smoke_test_local ## Installs wheel from dist/ and runs smoke test.

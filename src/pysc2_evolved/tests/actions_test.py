@@ -14,7 +14,7 @@
 # limitations under the License.
 """Test that various actions do what you'd expect."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.lib import actions, units
 from pysc2_evolved.tests import utils
@@ -26,7 +26,8 @@ def raw_ability_ids(obs):
     )
 
 
-class ActionsTest(utils.GameReplayTestCase):
+@pytest.mark.sc2
+class TestActions(utils.GameReplayTestCase):
     @utils.GameReplayTestCase.setup()
     def test_general_attack(self):
         self.create_unit(unit_type=units.Protoss.Zealot, owner=1, pos=(30, 30))
@@ -47,9 +48,9 @@ class ActionsTest(utils.GameReplayTestCase):
         observer = utils.get_unit(obs[0], unit_type=units.Protoss.Observer)
         self.assert_point(zealot.pos, (32, 32))
         self.assert_point(observer.pos, (32, 32))
-        self.assertEqual(
-            raw_ability_ids(obs[0]), [actions.FUNCTIONS.Attack_Attack_screen.ability_id]
-        )
+        assert raw_ability_ids(obs[0]) == [
+            actions.FUNCTIONS.Attack_Attack_screen.ability_id
+        ]
 
         self.raw_unit_command(0, "Attack_screen", zealot.tag, (34, 34))
 
@@ -60,9 +61,9 @@ class ActionsTest(utils.GameReplayTestCase):
         observer = utils.get_unit(obs[0], unit_type=units.Protoss.Observer)
         self.assert_point(zealot.pos, (34, 34))
         self.assert_point(observer.pos, (32, 32))
-        self.assertEqual(
-            raw_ability_ids(obs[0]), [actions.FUNCTIONS.Attack_Attack_screen.ability_id]
-        )
+        assert raw_ability_ids(obs[0]) == [
+            actions.FUNCTIONS.Attack_Attack_screen.ability_id
+        ]
 
         self.raw_unit_command(0, "Attack_screen", observer.tag, (34, 34))
 
@@ -72,10 +73,6 @@ class ActionsTest(utils.GameReplayTestCase):
         observer = utils.get_unit(obs[0], unit_type=units.Protoss.Observer)
         self.assert_point(zealot.pos, (34, 34))
         self.assert_point(observer.pos, (34, 34))
-        self.assertEqual(
-            raw_ability_ids(obs[0]), [actions.FUNCTIONS.Scan_Move_screen.ability_id]
-        )
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert raw_ability_ids(obs[0]) == [
+            actions.FUNCTIONS.Scan_Move_screen.ability_id
+        ]

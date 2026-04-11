@@ -14,13 +14,14 @@
 # limitations under the License.
 """Solve the nm_easy map using a fixed policy by reading the feature layers."""
 
-from absl.testing import absltest
+import pytest
 
 from pysc2_evolved.agents import scripted_agent
 from pysc2_evolved.env import run_loop, sc2_env
 from pysc2_evolved.tests import utils
 
 
+@pytest.mark.sc2
 class TestEasy(utils.TestCase):
     steps = 200
     step_mul = 16
@@ -39,8 +40,8 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
 
     def test_collect_mineral_shards(self):
         with sc2_env.SC2Env(
@@ -56,8 +57,8 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
 
     def test_collect_mineral_shards_feature_units(self):
         with sc2_env.SC2Env(
@@ -74,8 +75,8 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
 
     def test_collect_mineral_shards_raw(self):
         with sc2_env.SC2Env(
@@ -92,8 +93,8 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
 
     def test_defeat_roaches(self):
         with sc2_env.SC2Env(
@@ -109,8 +110,8 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
 
     def test_defeat_roaches_raw(self):
         with sc2_env.SC2Env(
@@ -127,9 +128,5 @@ class TestEasy(utils.TestCase):
             run_loop.run_loop([agent], env, self.steps)
 
         # Get some points
-        self.assertLessEqual(agent.episodes, agent.reward)
-        self.assertEqual(agent.steps, self.steps)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert agent.episodes <= agent.reward
+        assert agent.steps == self.steps
