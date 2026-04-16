@@ -11,6 +11,13 @@ inputs:
     package-name:
         description: PyPI package name to install (e.g. pysc2_evolved or pysc2-evolved)
         required: true
+    package-version:
+        description: >
+            Exact version to install (e.g. 1.1.0). When set the install
+            command pins to this version so an older release on a fallback
+            index cannot be picked up by mistake.
+        required: false
+        default: ""
     index-url:
         description: Primary index URL (leave empty for the default PyPI)
         required: false
@@ -28,14 +35,23 @@ runs:
           with:
               python-version: ${{ inputs.python-version }}
 
+        - name: Wait for index propagation
+          if: ${{ inputs.index-url != '' }}
+          shell: bash
+          run: sleep 10
+
         - name: Install package (custom index)
           if: ${{ inputs.index-url != '' }}
           shell: bash
           run: |
+              PKG="${{ inputs.package-name }}"
+              if [ -n "${{ inputs.package-version }}" ]; then
+                PKG="${PKG}==${{ inputs.package-version }}"
+              fi
               pip install \
                   --index-url ${{ inputs.index-url }} \
                   --extra-index-url ${{ inputs.extra-index-url }} \
-                  ${{ inputs.package-name }}
+                  "${PKG}"
 
         - name: Install package (PyPI)
           if: ${{ inputs.index-url == '' }}
