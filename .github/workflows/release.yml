@@ -191,28 +191,27 @@ jobs:
     # expected Converter class and MakeConverter factory.
     # ──────────────────────────────────────────────────────────────────────────
     verify-test-pypi:
-        name: Verify install from TestPyPI (${{ matrix.os }}, ${{ matrix.pkg }})
+        name: Verify install from TestPyPI (${{ matrix.os }}, py${{ matrix.python-version }}, ${{ matrix.pkg }})
         needs: [publish-test-pypi]
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
                 pkg: [pysc2_evolved, pysc2-evolved]
 
         steps:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            - name: Install from TestPyPI
-              run: |
-                  pip install \
-                      --index-url https://test.pypi.org/simple/ \
-                      --extra-index-url https://pypi.org/simple \
-                      ${{ matrix.pkg }}
-
-            - name: Verify pybind11 extensions work
+            - name: Install and smoke test
               uses: ./.github/actions/smoke-test-converter
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  package-name: ${{ matrix.pkg }}
+                  index-url: https://test.pypi.org/simple/
+                  extra-index-url: https://pypi.org/simple
 
     # ──────────────────────────────────────────────────────────────────────────
     # Publish to production PyPI only after all TestPyPI verifications pass.
@@ -250,24 +249,25 @@ jobs:
     # Skipped on workflow_dispatch (publish-pypi is skipped, so this is too).
     # ──────────────────────────────────────────────────────────────────────────
     verify-pypi:
-        name: Verify install from PyPI (${{ matrix.os }}, ${{ matrix.pkg }})
+        name: Verify install from PyPI (${{ matrix.os }}, py${{ matrix.python-version }}, ${{ matrix.pkg }})
         needs: [publish-pypi]
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
                 pkg: [pysc2_evolved, pysc2-evolved]
 
         steps:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-            - name: Install from PyPI
-              run: pip install ${{ matrix.pkg }}
-
-            - name: Verify pybind11 extensions work
+            - name: Install and smoke test
               uses: ./.github/actions/smoke-test-converter
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  package-name: ${{ matrix.pkg }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Attach all built artifacts to the GitHub Release.
