@@ -14,9 +14,20 @@
 """A run loop for agent/environment interaction."""
 
 import time
+from typing import List, TypeVar
+
+from pysc2_evolved.agents.base_agent import BaseAgent
+from pysc2_evolved.env.sc2_env import SC2Env
+
+ImplementsBaseAgent = TypeVar("ImplementsBaseAgent", bound=BaseAgent)
 
 
-def run_loop(agents, env, max_frames=0, max_episodes=0):
+def run_loop(
+    agents: List[ImplementsBaseAgent],
+    env: SC2Env,
+    max_frames: int = 0,
+    max_episodes: int = 0,
+):
     """A run loop to have agents and an environment interact."""
     total_frames = 0
     total_episodes = 0

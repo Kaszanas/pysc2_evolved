@@ -16,12 +16,11 @@
 
 import os
 
-from absl import app
-from absl import flags
+from absl import app, flags
+from s2clientprotocol import sc2api_pb2 as sc_pb
+
 from pysc2_evolved import run_configs
 from pysc2_evolved.lib import replay
-
-from s2clientprotocol import sc2api_pb2 as sc_pb
 
 FLAGS = flags.FLAGS
 

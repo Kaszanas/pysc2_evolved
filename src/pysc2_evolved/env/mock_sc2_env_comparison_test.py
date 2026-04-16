@@ -14,16 +14,15 @@
 # limitations under the License.
 """Tests that mock environment has same shape outputs as true environment."""
 
-from absl.testing import absltest
+import pytest
 
-from pysc2_evolved.env import mock_sc2_env
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import mock_sc2_env, sc2_env
 
 
-class TestCompareEnvironments(absltest.TestCase):
+@pytest.mark.sc2
+class TestCompareEnvironments:
     @classmethod
-    def setUpClass(cls):
-        super(TestCompareEnvironments, cls).setUpClass()
+    def setup_class(cls):
         players = [
             sc2_env.Agent(race=sc2_env.Race.terran),
             sc2_env.Agent(race=sc2_env.Race.protoss),
@@ -48,19 +47,12 @@ class TestCompareEnvironments(absltest.TestCase):
         cls._mock_env = mock_sc2_env.SC2TestEnv(**kwargs)
 
     @classmethod
-    def tearDownClass(cls):
-        super(TestCompareEnvironments, cls).tearDownClass()
+    def teardown_class(cls):
         cls._env.close()
         cls._mock_env.close()
 
     def test_observation_spec(self):
-        self.assertEqual(
-            self._env.observation_spec(), self._mock_env.observation_spec()
-        )
+        assert self._env.observation_spec() == self._mock_env.observation_spec()
 
     def test_action_spec(self):
-        self.assertEqual(self._env.action_spec(), self._mock_env.action_spec())
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert self._env.action_spec() == self._mock_env.action_spec()

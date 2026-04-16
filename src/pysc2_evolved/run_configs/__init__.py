@@ -13,30 +13,44 @@
 # limitations under the License.
 """Configs for various ways to run starcraft."""
 
-from absl import flags
+from typing import Dict
 
 from pysc2_evolved.lib import sc_process
-from pysc2_evolved.run_configs import platforms as platforms
 from pysc2_evolved.run_configs import lib as lib
+from pysc2_evolved.run_configs import platforms as platforms
 
-flags.DEFINE_string(
-    "sc2_run_config", None, "Which run_config to use to spawn the binary."
-)
-FLAGS = flags.FLAGS
+# REVIEW: REMOVE THIS:
+# flags.DEFINE_string(
+#     "sc2_run_config", None, "Which run_config to use to spawn the binary."
+# )
+# FLAGS = flags.FLAGS
 
 
-def get(version=None):
+def get(
+    version: lib.Version | str = None, sc2_run_config: lib.RunConfig | None = None
+) -> lib.RunConfig:
     """Get the config chosen by the flags."""
-    configs = {c.name(): c for c in lib.RunConfig.all_subclasses() if c.priority()}
+    configs: Dict[str, lib.RunConfig] = {
+        c.name(): c for c in lib.RunConfig.all_subclasses() if c.priority()
+    }
 
     if not configs:
         raise sc_process.SC2LaunchError("No valid run_configs found.")
 
-    if FLAGS.sc2_run_config is None:  # Find the highest priority as default.
-        return max(configs.values(), key=lambda c: c.priority())(version=version)
+    # REVIEW: This needs to be refactored, NO GLOBAL FLAGS OR GLOBAL STATE LIKE THAT:
+    if not sc2_run_config:  # Find the highest priority as default.
+
+        def get_priority(c):
+            return c.priority()
+
+        max_priority_run_config = max(configs.values(), key=get_priority)
+
+        run_config = max_priority_run_config(version=version)
+
+        return run_config
 
     try:
-        return configs[FLAGS.sc2_run_config](version=version)
+        return configs[sc2_run_config](version=version)
     except KeyError:
         raise sc_process.SC2LaunchError(
             "Invalid run_config. Valid configs are: %s"

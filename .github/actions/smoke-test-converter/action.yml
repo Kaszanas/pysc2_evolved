@@ -1,0 +1,47 @@
+name: Smoke test converter
+description: >
+    Set up Python, install the package from a registry, and assert that the
+    pybind11 native extensions (converter and uint8_lookup) are importable
+    and execute C++ code correctly.
+
+inputs:
+    python-version:
+        description: Python version to install and test under
+        required: true
+    package-name:
+        description: PyPI package name to install (e.g. pysc2_evolved or pysc2-evolved)
+        required: true
+    index-url:
+        description: Primary index URL (leave empty for the default PyPI)
+        required: false
+        default: ""
+    extra-index-url:
+        description: Fallback index URL (only used when index-url is set)
+        required: false
+        default: ""
+
+runs:
+    using: composite
+    steps:
+        - name: Set up Python ${{ inputs.python-version }}
+          uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+          with:
+              python-version: ${{ inputs.python-version }}
+
+        - name: Install package (custom index)
+          if: ${{ inputs.index-url != '' }}
+          shell: bash
+          run: |
+              pip install \
+                  --index-url ${{ inputs.index-url }} \
+                  --extra-index-url ${{ inputs.extra-index-url }} \
+                  ${{ inputs.package-name }}
+
+        - name: Install package (PyPI)
+          if: ${{ inputs.index-url == '' }}
+          shell: bash
+          run: pip install ${{ inputs.package-name }}
+
+        - name: Verify pybind11 extensions work
+          shell: bash
+          run: python scripts/smoke_test_converter.py

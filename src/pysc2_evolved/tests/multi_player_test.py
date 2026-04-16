@@ -16,24 +16,21 @@
 
 import os
 
+import pytest
 from absl import logging
-from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import portspicker
-from pysc2_evolved.lib import run_parallel
-from pysc2_evolved.tests import utils
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import point, portspicker, run_parallel
+from pysc2_evolved.tests import utils
 
 
 def print_stage(stage):
     logging.info((" %s " % stage).center(80, "-"))
 
 
+@pytest.mark.sc2
 class TestMultiplayer(utils.TestCase):
     def test_multi_player(self):
         players = 2
@@ -95,10 +92,8 @@ class TestMultiplayer(utils.TestCase):
                     # Observe
                     obs = parallel.run(c.observe for c in controllers)
                     for p_id, o in enumerate(obs):
-                        self.assertEqual(o.observation.game_loop, game_loop)
-                        self.assertEqual(
-                            o.observation.player_common.player_id, p_id + 1
-                        )
+                        assert o.observation.game_loop == game_loop
+                        assert o.observation.player_common.player_id == p_id + 1
 
                     # Act
                     actions = [sc_pb.Action() for _ in range(players)]
@@ -121,7 +116,3 @@ class TestMultiplayer(utils.TestCase):
                 p.close()
             portspicker.return_ports(ports)
             parallel.shutdown()
-
-
-if __name__ == "__main__":
-    absltest.main()

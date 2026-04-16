@@ -14,241 +14,48 @@
 """Render feature layers from SC2 Observation protos into numpy arrays."""
 # pylint: disable=g-complex-comprehension
 
+from __future__ import annotations
+
 import collections
-import enum
 import random
 
-from absl import logging
 import numpy as np
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import colors
-from pysc2_evolved.lib import named_array
-from pysc2_evolved.lib import point
-from pysc2_evolved.lib import static_data
-from pysc2_evolved.lib import stopwatch
-from pysc2_evolved.lib import transform
-
+from absl import logging
 from s2clientprotocol import raw_pb2 as sc_raw
 from s2clientprotocol import sc2api_pb2 as sc_pb
+from s2clientprotocol import score_pb2 as sc_score
+
+from pysc2_evolved.lib import (
+    actions,
+    colors,
+    named_array,
+    point,
+    static_data,
+    stopwatch,
+    transform,
+)
+from pysc2_evolved.lib.actions import ActionSpace
+from pysc2_evolved.lib.features_types import (
+    EffectPos,
+    FeatureType,
+    FeatureUnit,
+    Passthrough,
+    Player,
+    ProductionQueue,
+    Radar,
+    ScoreByCategory,
+    ScoreByVital,
+    ScoreCategories,
+    ScoreCumulative,
+    ScoreVitals,
+    UnitCounts,
+    UnitLayer,
+)
+from pysc2_evolved.lib.message_wrapper import MessageWrapper
 
 sw = stopwatch.sw
 
 EPSILON = 1e-5
-
-
-class FeatureType(enum.Enum):
-    SCALAR = 1
-    CATEGORICAL = 2
-
-
-class PlayerRelative(enum.IntEnum):
-    """The values for the `player_relative` feature layers."""
-
-    NONE = 0
-    SELF = 1
-    ALLY = 2
-    NEUTRAL = 3
-    ENEMY = 4
-
-
-class Visibility(enum.IntEnum):
-    """Values for the `visibility` feature layers."""
-
-    HIDDEN = 0
-    SEEN = 1
-    VISIBLE = 2
-
-
-class Effects(enum.IntEnum):
-    """Values for the `effects` feature layer."""
-
-    # pylint: disable=invalid-name
-    none = 0
-    PsiStorm = 1
-    GuardianShield = 2
-    TemporalFieldGrowing = 3
-    TemporalField = 4
-    ThermalLance = 5
-    ScannerSweep = 6
-    NukeDot = 7
-    LiberatorDefenderZoneSetup = 8
-    LiberatorDefenderZone = 9
-    BlindingCloud = 10
-    CorrosiveBile = 11
-    LurkerSpines = 12
-    # pylint: enable=invalid-name
-
-
-class ScoreCumulative(enum.IntEnum):
-    """Indices into the `score_cumulative` observation."""
-
-    score = 0
-    idle_production_time = 1
-    idle_worker_time = 2
-    total_value_units = 3
-    total_value_structures = 4
-    killed_value_units = 5
-    killed_value_structures = 6
-    collected_minerals = 7
-    collected_vespene = 8
-    collection_rate_minerals = 9
-    collection_rate_vespene = 10
-    spent_minerals = 11
-    spent_vespene = 12
-
-
-class ScoreByCategory(enum.IntEnum):
-    """Indices for the `score_by_category` observation's first dimension."""
-
-    food_used = 0
-    killed_minerals = 1
-    killed_vespene = 2
-    lost_minerals = 3
-    lost_vespene = 4
-    friendly_fire_minerals = 5
-    friendly_fire_vespene = 6
-    used_minerals = 7
-    used_vespene = 8
-    total_used_minerals = 9
-    total_used_vespene = 10
-
-
-class ScoreCategories(enum.IntEnum):
-    """Indices for the `score_by_category` observation's second dimension."""
-
-    none = 0
-    army = 1
-    economy = 2
-    technology = 3
-    upgrade = 4
-
-
-class ScoreByVital(enum.IntEnum):
-    """Indices for the `score_by_vital` observation's first dimension."""
-
-    total_damage_dealt = 0
-    total_damage_taken = 1
-    total_healed = 2
-
-
-class ScoreVitals(enum.IntEnum):
-    """Indices for the `score_by_vital` observation's second dimension."""
-
-    life = 0
-    shields = 1
-    energy = 2
-
-
-class Player(enum.IntEnum):
-    """Indices into the `player` observation."""
-
-    player_id = 0
-    minerals = 1
-    vespene = 2
-    food_used = 3
-    food_cap = 4
-    food_army = 5
-    food_workers = 6
-    idle_worker_count = 7
-    army_count = 8
-    warp_gate_count = 9
-    larva_count = 10
-
-
-class UnitLayer(enum.IntEnum):
-    """Indices into the unit layers in the observations."""
-
-    unit_type = 0
-    player_relative = 1
-    health = 2
-    shields = 3
-    energy = 4
-    transport_slots_taken = 5
-    build_progress = 6
-
-
-class UnitCounts(enum.IntEnum):
-    """Indices into the `unit_counts` observations."""
-
-    unit_type = 0
-    count = 1
-
-
-class FeatureUnit(enum.IntEnum):
-    """Indices for the `feature_unit` observations."""
-
-    unit_type = 0
-    alliance = 1
-    health = 2
-    shield = 3
-    energy = 4
-    cargo_space_taken = 5
-    build_progress = 6
-    health_ratio = 7
-    shield_ratio = 8
-    energy_ratio = 9
-    display_type = 10
-    owner = 11
-    x = 12
-    y = 13
-    facing = 14
-    radius = 15
-    cloak = 16
-    is_selected = 17
-    is_blip = 18
-    is_powered = 19
-    mineral_contents = 20
-    vespene_contents = 21
-    cargo_space_max = 22
-    assigned_harvesters = 23
-    ideal_harvesters = 24
-    weapon_cooldown = 25
-    order_length = 26  # If zero, the unit is idle.
-    order_id_0 = 27
-    order_id_1 = 28
-    tag = 29  # Unique identifier for a unit (only populated for raw units).
-    hallucination = 30
-    buff_id_0 = 31
-    buff_id_1 = 32
-    addon_unit_type = 33
-    active = 34
-    is_on_screen = 35
-    order_progress_0 = 36
-    order_progress_1 = 37
-    order_id_2 = 38
-    order_id_3 = 39
-    is_in_cargo = 40
-    buff_duration_remain = 41
-    buff_duration_max = 42
-    attack_upgrade_level = 43
-    armor_upgrade_level = 44
-    shield_upgrade_level = 45
-
-
-class EffectPos(enum.IntEnum):
-    """Positions of the active effects."""
-
-    effect = 0
-    alliance = 1
-    owner = 2
-    radius = 3
-    x = 4
-    y = 5
-
-
-class Radar(enum.IntEnum):
-    """Positions of the Sensor towers."""
-
-    x = 0
-    y = 1
-    radius = 2
-
-
-class ProductionQueue(enum.IntEnum):
-    """Indices for the `production_queue` observations."""
-
-    ability_id = 0
-    build_progress = 1
 
 
 class Feature(
@@ -545,147 +352,164 @@ class AgentInterfaceFormat(object):
         feature_dimensions=None,
         rgb_dimensions=None,
         raw_resolution=None,
-        action_space=None,
+        action_space: ActionSpace = None,
         camera_width_world_units=None,
-        use_feature_units=False,
-        use_raw_units=False,
-        use_raw_actions=False,
-        max_raw_actions=512,
-        max_selected_units=30,
-        use_unit_counts=False,
-        use_camera_position=False,
-        show_cloaked=False,
-        show_burrowed_shadows=False,
-        show_placeholders=False,
-        hide_specific_actions=True,
+        use_feature_units: bool = False,
+        use_raw_units: bool = False,
+        use_raw_actions: bool = False,
+        max_raw_actions: int = 512,
+        max_selected_units: int = 30,
+        use_unit_counts: bool = False,
+        use_camera_position: bool = False,
+        show_cloaked: bool = False,
+        show_burrowed_shadows: bool = False,
+        show_placeholders: bool = False,
+        hide_specific_actions: bool = True,
         action_delay_fn=None,
-        send_observation_proto=False,
-        crop_to_playable_area=False,
-        raw_crop_to_playable_area=False,
-        allow_cheating_layers=False,
-        add_cargo_to_units=False,
+        send_observation_proto: bool = False,
+        crop_to_playable_area: bool = False,
+        raw_crop_to_playable_area: bool = False,
+        allow_cheating_layers: bool = False,
+        add_cargo_to_units: bool = False,
     ):
-        """Initializer.
+        """
+        Initializes Agent Interface Format.
 
-        Args:
-          feature_dimensions: Feature layer `Dimension`s. Either this or
-              rgb_dimensions (or both) must be set.
-          rgb_dimensions: RGB `Dimension`. Either this or feature_dimensions
-              (or both) must be set.
-          raw_resolution: Discretize the `raw_units` observation's x,y to this
-              resolution. Default is the map_size.
-          action_space: If you pass both feature and rgb sizes, then you must also
-              specify which you want to use for your actions as an ActionSpace enum.
-          camera_width_world_units: The width of your screen in world units. If your
+        Parameters
+        ----------
+        feature_dimensions : _type_, optional
+            Feature layer `Dimension`s. Either this or
+            rgb_dimensions (or both) must be set., by default None
+        rgb_dimensions : _type_, optional
+            RGB `Dimension`. Either this or feature_dimensions
+            (or both) must be set., by default None
+        raw_resolution : _type_, optional
+            Discretize the `raw_units` observation's x,y to this
+            resolution. Default is the map_size., by default None
+        action_space : ActionSpace, optional
+            If you pass both feature and rgb sizes, then you must also
+            specify which you want to use for your actions as an ActionSpace enum., by default None
+        camera_width_world_units : _type_, optional
+            The width of your screen in world units. If your
               feature_dimensions.screen=(64, 48) and camera_width is 24, then each
               px represents 24 / 64 = 0.375 world units in each of x and y.
               It'll then represent a camera of size (24, 0.375 * 48) = (24, 18)
-              world units.
-          use_feature_units: Whether to include feature_unit observations.
-          use_raw_units: Whether to include raw unit data in observations. This
-              differs from feature_units because it includes units outside the
-              screen and hidden units, and because unit positions are given in
-              terms of world units instead of screen units.
-          use_raw_actions: [bool] Whether to use raw actions as the interface.
-              Same as specifying action_space=ActionSpace.RAW.
-          max_raw_actions: [int] Maximum number of raw actions
-          max_selected_units: [int] The maximum number of selected units in the
-              raw interface.
-          use_unit_counts: Whether to include unit_counts observation. Disabled by
-              default since it gives information outside the visible area.
-          use_camera_position: Whether to include the camera's position (in minimap
-              coordinates) in the observations.
-          show_cloaked: Whether to show limited information for cloaked units.
-          show_burrowed_shadows: Whether to show limited information for burrowed
-              units that leave a shadow on the ground (ie widow mines and moving
-              roaches and infestors).
-          show_placeholders: Whether to show buildings that are queued for
-              construction.
-          hide_specific_actions: [bool] Some actions (eg cancel) have many
-              specific versions (cancel this building, cancel that spell) and can
-              be represented in a more general form. If a specific action is
-              available, the general will also be available. If you set
-              `hide_specific_actions` to False, the specific versions will also be
-              available, but if it's True, the specific ones will be hidden.
-              Similarly, when transforming back, a specific action will be returned
-              as the general action. This simplifies the action space, though can
-              lead to some actions in replays not being exactly representable using
-              only the general actions.
-          action_delay_fn: A callable which when invoked returns a delay in game
-              loops to apply to a requested action. Defaults to None, meaning no
-              delays are added (actions will be executed on the next game loop,
-              hence with the minimum delay of 1).
-          send_observation_proto: Whether or not to send the raw observation
-              response proto in the observations.
-          crop_to_playable_area: Crop the feature layer minimap observations down
-              from the full map area to just the playable area. Also improves the
-              heightmap rendering.
-          raw_crop_to_playable_area: Crop the raw units to the playable area. This
-              means units will show up closer to the origin with less dead space
-              around their valid locations.
-          allow_cheating_layers: Show the unit types and potentially other cheating
-              layers on the minimap.
-          add_cargo_to_units: Whether to add the units that are currently in cargo
-              to the feature_units and raw_units lists.
+              world units., by default None
+        use_feature_units : bool, optional
+            Whether to include feature_unit observations., by default False
+        use_raw_units : bool, optional
+            Whether to include raw unit data in observations. This
+            differs from feature_units because it includes units outside the
+            screen and hidden units, and because unit positions are given in
+            terms of world units instead of screen units., by default False
+        use_raw_actions : bool, optional
+            Whether to use raw actions as the interface.
+            Same as specifying action_space=ActionSpace.RAW., by default False
+        max_raw_actions : int, optional
+            Maximum number of raw actions, by default 512
+        max_selected_units : int, optional
+            The maximum number of selected units in the
+            raw interface., by default 30
+        use_unit_counts : bool, optional
+            Whether to include unit_counts observation. Disabled by
+              default since it gives information outside the visible area., by default False
+        use_camera_position : bool, optional
+            Whether to include the camera's position (in minimap
+            coordinates) in the observations., by default False
+        show_cloaked : bool, optional
+            Whether to show limited information for cloaked units., by default False
+        show_burrowed_shadows : bool, optional
+            Whether to show limited information for burrowed
+            units that leave a shadow on the ground (ie widow mines and moving
+            roaches and infestors)., by default False
+        show_placeholders : bool, optional
+            Whether to show buildings that are queued for
+            construction., by default False
+        hide_specific_actions : bool, optional
+            Some actions (eg cancel) have many
+            specific versions (cancel this building, cancel that spell) and can
+            be represented in a more general form. If a specific action is
+            available, the general will also be available. If you set
+            `hide_specific_actions` to False, the specific versions will also be
+            available, but if it's True, the specific ones will be hidden.
+            Similarly, when transforming back, a specific action will be returned
+            as the general action. This simplifies the action space, though can
+            lead to some actions in replays not being exactly representable using
+            only the general actions., by default True
+        action_delay_fn : _type_, optional
+            A callable which when invoked returns a delay in game
+            loops to apply to a requested action. Defaults to None, meaning no
+            delays are added (actions will be executed on the next game loop,
+            hence with the minimum delay of 1)., by default None
+        send_observation_proto : bool, optional
+            Whether or not to send the raw observation
+            response proto in the observations., by default False
+        crop_to_playable_area : bool, optional
+            Crop the feature layer minimap observations down
+            from the full map area to just the playable area. Also improves the
+            heightmap rendering., by default False
+        raw_crop_to_playable_area : bool, optional
+            Crop the raw units to the playable area. This
+            means units will show up closer to the origin with less dead space
+            around their valid locations., by default False
+        allow_cheating_layers : bool, optional
+            Show the unit types and potentially other cheating
+            layers on the minimap., by default False
+        add_cargo_to_units : bool, optional
+            Whether to add the units that are currently in cargo
+            to the feature_units and raw_units lists., by default False
 
-        Raises:
-          ValueError: if the parameters are inconsistent.
+        Raises
+        ------
+        ValueError
+            If neither feature_dimensions, rgb_dimensions nor use_raw_units are set.
+        ValueError
+            If action_space is specified but not of type ActionSpace.
+        ValueError
+            If action_space is specified as FEATURES but feature_dimensions isn't set, or
+            if action_space is specified as RGB but rgb_dimensions isn't set.
+        ValueError
+            When no action_space is specified and feature_dimensions and rgb_dimensions are both set,
+            since then it's ambiguous which action space to use.
+        ValueError
+            If use_raw_actions is True but use_raw_units isn't True,
+            since raw actions don't make sense without raw units.
+        ValueError
+            If use_raw_actions is True but action_space is different from RAW,
+            since then the action space and use_raw_actions are inconsistent.
+        ValueError
+            If rgb_dimensions are specified and the screen dimensions are smaller than the minimap dimensions,
+            since then the screen can't fit the minimap.
         """
 
-        if not (feature_dimensions or rgb_dimensions or use_raw_units):
-            raise ValueError(
-                "Must set either the feature layer or rgb dimensions, or use raw units."
-            )
+        # REVIEW: All of the checks below are convoluted, and not clearly
+        # REVIEW: interpretable, this should be adjusted, a separate function/method
+        # REVIEW: should be defined for these.
 
-        if action_space:
-            if not isinstance(action_space, actions.ActionSpace):
-                raise ValueError("action_space must be of type ActionSpace.")
+        self._check_feature_dimensions(
+            feature_dimensions=feature_dimensions,
+            rgb_dimensions=rgb_dimensions,
+            use_raw_units=use_raw_units,
+        )
 
-            if action_space == actions.ActionSpace.RAW:
-                use_raw_actions = True
-            elif (
-                action_space == actions.ActionSpace.FEATURES and not feature_dimensions
-            ) or (action_space == actions.ActionSpace.RGB and not rgb_dimensions):
-                raise ValueError(
-                    "Action space must match the observations, action space={}, "
-                    "feature_dimensions={}, rgb_dimensions={}".format(
-                        action_space, feature_dimensions, rgb_dimensions
-                    )
-                )
-        else:
-            if use_raw_actions:
-                action_space = actions.ActionSpace.RAW
-            elif feature_dimensions and rgb_dimensions:
-                raise ValueError(
-                    "You must specify the action space if you have both screen and "
-                    "rgb observations."
-                )
-            elif feature_dimensions:
-                action_space = actions.ActionSpace.FEATURES
-            else:
-                action_space = actions.ActionSpace.RGB
+        action_space, use_raw_actions = self._check_action_space(
+            action_space=action_space,
+            feature_dimensions=feature_dimensions,
+            rgb_dimensions=rgb_dimensions,
+            use_raw_actions=use_raw_actions,
+        )
 
         if raw_resolution:
             raw_resolution = _to_point(raw_resolution)
 
         if use_raw_actions:
-            if not use_raw_units:
-                raise ValueError(
-                    "You must set use_raw_units if you intend to use_raw_actions"
-                )
-            if action_space != actions.ActionSpace.RAW:
-                raise ValueError(
-                    "Don't specify both an action_space and use_raw_actions."
-                )
-
-        if rgb_dimensions and (
-            rgb_dimensions.screen.x < rgb_dimensions.minimap.x
-            or rgb_dimensions.screen.y < rgb_dimensions.minimap.y
-        ):
-            raise ValueError(
-                "RGB Screen (%s) can't be smaller than the minimap (%s)."
-                % (rgb_dimensions.screen, rgb_dimensions.minimap)
+            self._check_use_raw_actions(
+                use_raw_units=use_raw_units,
+                action_space=action_space,
             )
+
+        if rgb_dimensions:
+            self._check_rgb_dimensions(rgb_dimensions=rgb_dimensions)
 
         self._feature_dimensions = feature_dimensions
         self._rgb_dimensions = rgb_dimensions
@@ -714,6 +538,82 @@ class AgentInterfaceFormat(object):
             self._action_dimensions = feature_dimensions
         else:
             self._action_dimensions = rgb_dimensions
+
+    @staticmethod
+    def _check_feature_dimensions(feature_dimensions, rgb_dimensions, use_raw_units):
+        if not (feature_dimensions or rgb_dimensions or use_raw_units):
+            raise ValueError(
+                "Must set either the feature layer or rgb dimensions, or use raw units."
+            )
+
+    @staticmethod
+    def _check_action_space(
+        action_space,
+        feature_dimensions,
+        rgb_dimensions,
+        use_raw_actions: bool,
+    ):
+        # The action space was set by the user:
+        if action_space:
+            if not isinstance(action_space, actions.ActionSpace):
+                raise ValueError("action_space must be of type ActionSpace.")
+
+            if action_space == actions.ActionSpace.RAW:
+                use_raw_actions = True
+            elif (
+                action_space == actions.ActionSpace.FEATURES and not feature_dimensions
+            ) or (action_space == actions.ActionSpace.RGB and not rgb_dimensions):
+                raise ValueError(
+                    "Action space must match the observations, action space={}, "
+                    "feature_dimensions={}, rgb_dimensions={}".format(
+                        action_space, feature_dimensions, rgb_dimensions
+                    )
+                )
+            return action_space, use_raw_actions
+
+        # Action space was not set by the user, infer it from the other parameters:
+        if use_raw_actions:
+            action_space = actions.ActionSpace.RAW
+            return action_space, use_raw_actions
+
+        # If both feature and rgb dimensions are set, then it's ambiguous which action space to use,
+        # so require the user to specify it.
+        if feature_dimensions and rgb_dimensions:
+            raise ValueError(
+                "You must specify the action space if you have both screen and "
+                "rgb observations."
+            )
+
+        # If only one of feature and rgb dimensions is set, then use the corresponding action space.
+        if feature_dimensions:
+            action_space = actions.ActionSpace.FEATURES
+            return action_space, use_raw_actions
+
+        # If we get here, then rgb_dimensions is set but feature_dimensions isn't,
+        # so use the rgb action space.
+        action_space = actions.ActionSpace.RGB
+
+        return action_space, use_raw_actions
+
+    @staticmethod
+    def _check_use_raw_actions(use_raw_units, action_space):
+        if not use_raw_units:
+            raise ValueError(
+                "You must set use_raw_units if you intend to use_raw_actions"
+            )
+        if action_space != actions.ActionSpace.RAW:
+            raise ValueError("Don't specify both an action_space and use_raw_actions.")
+
+    @staticmethod
+    def _check_rgb_dimensions(rgb_dimensions):
+        if (
+            rgb_dimensions.screen.x < rgb_dimensions.minimap.x
+            or rgb_dimensions.screen.y < rgb_dimensions.minimap.y
+        ):
+            raise ValueError(
+                "RGB Screen (%s) can't be smaller than the minimap (%s)."
+                % (rgb_dimensions.screen, rgb_dimensions.minimap)
+            )
 
     @property
     def feature_dimensions(self):
@@ -817,8 +717,8 @@ def parse_agent_interface_format(
     feature_minimap=None,
     rgb_screen=None,
     rgb_minimap=None,
-    action_space=None,
-    action_delays=None,
+    action_space: str | None = None,
+    action_delays: list[int] | None = None,
     **kwargs,
 ):
     """Creates an AgentInterfaceFormat object from keyword args.
@@ -888,8 +788,11 @@ def parse_agent_interface_format(
 
 
 def features_from_game_info(
-    game_info, agent_interface_format=None, map_name=None, **kwargs
-):
+    game_info: sc_pb.ResponseGameInfo,
+    agent_interface_format: AgentInterfaceFormat | None = None,
+    map_name: str | None = None,
+    **kwargs,
+) -> Features:
     """Construct a Features object using data extracted from game info.
 
     Args:
@@ -1268,7 +1171,9 @@ class Features(object):
         return self._requested_races
 
     @sw.decorate
-    def transform_obs(self, obs):
+    def transform_obs(
+        self, obs: sc_pb.ResponseObservation | MessageWrapper
+    ) -> named_array.NamedDict:
         """Render some SC2 observations into something an agent can handle."""
         empty_unit = np.array([], dtype=np.int32).reshape((0, len(UnitLayer)))
         out = named_array.NamedDict(
@@ -1288,7 +1193,7 @@ class Features(object):
             }
         )
 
-        def or_zeros(layer, size):
+        def or_zeros(layer: np.ndarray | None, size: point.Point) -> np.ndarray:
             if layer is not None:
                 return layer.astype(np.int32, copy=False)
             else:
@@ -1302,9 +1207,10 @@ class Features(object):
                     np.stack(
                         [
                             or_zeros(
-                                f.unpack(obs.observation), aif.feature_dimensions.screen
+                                screen_feature.unpack(obs.observation),
+                                aif.feature_dimensions.screen,
                             )
-                            for f in SCREEN_FEATURES
+                            for screen_feature in SCREEN_FEATURES
                         ]
                     ),
                     names=[ScreenFeatures, None, None],
@@ -1370,7 +1276,11 @@ class Features(object):
                 dtype=np.int32,
             )
 
-            def get_score_details(key, details, categories):
+            def get_score_details(
+                key: ScoreByCategory | ScoreByVital,
+                details: sc_score.ScoreDetails | MessageWrapper,
+                categories: list,
+            ) -> list:
                 row = getattr(details, key.name)
                 return [getattr(row, category.name) for category in categories]
 
@@ -1411,7 +1321,7 @@ class Features(object):
             dtype=np.int32,
         )
 
-        def unit_vec(u):
+        def unit_vec(u: sc_raw.Unit) -> np.ndarray:
             return np.array(
                 (
                     u.unit_type,
@@ -1473,24 +1383,31 @@ class Features(object):
 
         tag_types = {}  # Only populate the cache if it's needed.
 
-        def get_addon_type(tag):
+        def get_addon_type(tag: int) -> int:
             if not tag_types:
                 for u in raw.units:
                     tag_types[u.tag] = u.unit_type
             return tag_types.get(tag, 0)
 
-        def full_unit_vec(u, pos_transform, is_raw=False):
+        def full_unit_vec(
+            u: sc_raw.Unit,
+            pos_transform: transform.Chain,
+            is_raw: bool = False,
+        ) -> list:
             """Compute unit features."""
             screen_pos = pos_transform.fwd_pt(point.Point.build(u.pos))
             screen_radius = pos_transform.fwd_dist(u.radius)
 
-            def raw_order(i):
+            def raw_order(i) -> int:
                 if len(u.orders) > i:
                     # TODO(tewalds): Return a generalized func id.
                     return actions.RAW_ABILITY_ID_TO_FUNC_ID.get(
                         u.orders[i].ability_id, 0
                     )
                 return 0
+
+            # REVIEW: Alliance is an enum in proto. MessageWrapper
+            # REVIEW: uses the string value instead of the raw int as expected.
 
             features = [
                 # Match unit_vec order
@@ -1623,7 +1540,9 @@ class Features(object):
 
         out["upgrades"] = np.array(raw.player.upgrade_ids, dtype=np.int32)
 
-        def cargo_units(u, pos_transform, is_raw=False):
+        def cargo_units(
+            u: sc_raw.Unit, pos_transform: transform.Chain, is_raw: bool = False
+        ) -> list[list]:
             """Compute unit features."""
             screen_pos = pos_transform.fwd_pt(point.Point.build(u.pos))
             features = []
@@ -1761,7 +1680,7 @@ class Features(object):
 
         if aif.use_feature_units or aif.use_raw_units:
 
-            def transform_radar(radar):
+            def transform_radar(radar) -> tuple[int, int, int]:
                 p = self._world_to_minimap_px.fwd_pt(point.Point.build(radar.pos))
                 return p.x, p.y, radar.radius
 
@@ -1778,8 +1697,26 @@ class Features(object):
         return out
 
     @sw.decorate
-    def available_actions(self, obs):
-        """Return the list of available action ids."""
+    def available_actions(self, obs: sc_pb.Observation) -> list[int]:
+        """
+        Return the list of available action ids.
+
+        Parameters
+        ----------
+        obs : sc_pb.Observation
+            Observation for which available actions will be listed.
+
+        Returns
+        -------
+        list[int]
+            List of available action ids.
+
+        Raises
+        ------
+        ValueError
+            If an ability in the observation doesn't have a corresponding action.
+        """
+
         available_actions = set()
         hide_specific_actions = self._agent_interface_format.hide_specific_actions
         for i, func in actions.FUNCTIONS_AVAILABLE.items():
@@ -1808,7 +1745,12 @@ class Features(object):
         return list(available_actions)
 
     @sw.decorate
-    def transform_action(self, obs, func_call, skip_available=False):
+    def transform_action(
+        self,
+        obs: sc_pb.Observation,
+        func_call: actions.FunctionCall,
+        skip_available: bool = False,
+    ) -> sc_pb.Action:
         """Transform an agent-style action to one that SC2 can consume.
 
         Args:
@@ -1922,20 +1864,30 @@ class Features(object):
         return sc2_action
 
     @sw.decorate
-    def reverse_action(self, action):
-        """Transform an SC2-style action into an agent-style action.
-
+    def reverse_action(self, action: sc_pb.Action) -> actions.FunctionCall:
+        """
+        Transform an SC2-style action into an agent-style action.
         This should be the inverse of `transform_action`.
 
-        Args:
-          action: a `sc_pb.Action` to be transformed.
 
-        Returns:
-          A corresponding `actions.FunctionCall`.
+        Parameters
+        ----------
+        action : sc_pb.Action
+            The SC2-style action to transform.
 
-        Raises:
-          ValueError: if it doesn't know how to transform this action.
+        Returns
+        -------
+        actions.FunctionCall
+            The corresponding agent-style function call.
+
+        Raises
+        ------
+        ValueError
+            If the action is not recognized or cannot be transformed.
+        ValueError
+            If the action is not recognized or cannot be transformed.
         """
+
         FUNCTIONS = actions.FUNCTIONS  # pylint: disable=invalid-name
 
         aif = self._agent_interface_format
@@ -2033,21 +1985,33 @@ class Features(object):
         return FUNCTIONS.no_op()
 
     @sw.decorate
-    def reverse_raw_action(self, action, prev_obs):
-        """Transform an SC2-style action into an agent-style action.
-
+    def reverse_raw_action(
+        self, action: sc_pb.Action, prev_obs: sc_pb.Observation
+    ) -> actions.FunctionCall:
+        """
+        Transform an SC2-style action into an agent-style action.
         This should be the inverse of `transform_action`.
 
-        Args:
-          action: a `sc_pb.Action` to be transformed.
-          prev_obs: an obs to figure out tags.
+        Parameters
+        ----------
+        action : sc_pb.Action
+            The SC2-style action to transform.
+        prev_obs : sc_pb.Observation
+            The previous observation, used to figure out tags for raw actions.
 
-        Returns:
-          A corresponding `actions.FunctionCall`.
+        Returns
+        -------
+        actions.FunctionCall
+            The corresponding agent-style function call.
 
-        Raises:
-          ValueError: if it doesn't know how to transform this action.
+        Raises
+        ------
+        ValueError
+            If the action is not recognized or cannot be transformed.
+        ValueError
+            If the action is not recognized or cannot be transformed.
         """
+
         aif = self._agent_interface_format
         raw_tags = prev_obs["raw_units"][:, FeatureUnit.tag]
 
@@ -2135,29 +2099,3 @@ class Features(object):
                 return actions.RAW_FUNCTIONS.raw_move_camera(coord)
 
         return actions.RAW_FUNCTIONS.no_op()
-
-
-class Passthrough:
-    """Alternative to `Features` which passes actions and observations through."""
-
-    def observation_spec(self):
-        return {}
-
-    def transform_obs(self, observation):
-        return observation
-
-    def action_spec(self):
-        return {}
-
-    def transform_action(self, observation, action, skip_available):
-        del observation
-        del skip_available
-        return action
-
-    def available_actions(self, observation):
-        del observation
-        raise NotImplementedError("available_actions isn't supported for passthrough")
-
-    def reverse_action(self, action):
-        del action
-        raise NotImplementedError("reverse_action isn't supported for passthrough")

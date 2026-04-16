@@ -1,6 +1,6 @@
 [project]
 name = "pysc2_evolved"
-version = "0.1.0"
+version = "1.0.0"
 description = "Starcraft II environment and library for training agents."
 readme = "README.md"
 authors = [
@@ -9,34 +9,69 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "absl-py>=0.1.0",
+    "click>=8.1.8",
     "deepdiff>=8.4.2",
     "dm-env>=1.6",
+    "dm-env-rpc>=1.1.7",
     "enum34>=1.1.10",
     "mock>=5.2.0",
     "mpyq>=0.2.5",
-    "numpy>=1.10",
+    "numpy>=2.4.4",
     "portpicker>=1.6.0",
-    "protobuf<=3.20.3",
+    "protobuf>=7.34.1,<8",
     "pygame>=2.6.1",
+    "python-dotenv>=1.2.1",
     "requests>=2.32.3",
-    "s2clientprotocol>=5.0.14.93333.0",
-    "s2protocol>=5.0.14.93333.0",
-    "sk-video>=1.1.10",
-    "typer>=0.15.3",
+    "pys2clientprotocol>=1.0.2",
+    "s2protocol>=5.0.15.95299.0",
+    "tqdm>=4.67.1",
+    "typing-extensions>=4.15.0",
     "websocket-client>=1.8.0",
+    "imageio>=2.37.3",
+    "imageio-ffmpeg>=0.6.0",
 ]
+
+[tool.commitizen]
+version = "1.0.0"
+version_files = ["pyproject.toml:version", "MODULE.bazel:version"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["commitizen>=4.6.2", "pre-commit>=4.2.0", "ruff>=0.11.8"]
+dev = [
+    "commitizen>=4.6.2",
+    "pre-commit>=4.2.0",
+    "pytest>=9.0.3",
+    "ruff>=0.11.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src"]
+python_files = ["*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--import-mode=importlib"
+norecursedirs = ["bazel-*", ".venv", "dist", "build", "__pycache__"]
+markers = [
+    "minor: tests that do not require a running SC2 game engine (safe for CI)",
+    "sc2: tests that require a running StarCraft II game engine",
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysc2_evolved"]
 
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+[tool.uv.sources]
+s2protocol = { git = "https://github.com/Kaszanas/s2protocol" }
+
 [project.scripts]
-pysc2_evolved_agent = "pysc2_evolved.bin.agent:entry_point"
+pysc2_evolved_agent = "pysc2_evolved.bin.agent:main"
 pysc2_evolved_play = "pysc2_evolved.bin.play:entry_point"
 pysc2_evolved_replay_info = "pysc2_evolved.bin.replay_info:entry_point"

@@ -1,0 +1,302 @@
+name: Release
+
+on:
+    workflow_dispatch:
+    release:
+        types: [published]
+
+jobs:
+    # ──────────────────────────────────────────────────────────────────────────
+    # Guard: verify the release tag (e.g. v0.2.0) matches the version field in
+    # pyproject.toml (e.g. 0.2.0).  Skipped on workflow_dispatch.
+    # ──────────────────────────────────────────────────────────────────────────
+    check-version:
+        name: Verify tag matches pyproject.toml version
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Compare tag with pyproject.toml version
+              shell: bash
+              run: |
+                  PKG_VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*= *"\(.*\)"/\1/')
+                  EXPECTED_TAG="${PKG_VERSION}"
+                  if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
+                      echo "ERROR: tag '${GITHUB_REF_NAME}' does not match pyproject.toml version '${EXPECTED_TAG}'"
+                      exit 1
+                  fi
+                  echo "OK: tag ${GITHUB_REF_NAME} matches pyproject.toml version ${PKG_VERSION}"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Compile C++ extensions with Bazel and run C++ unit tests.
+    # No Python version matrix — C++ compilation is Python-independent.
+    # Compiled binaries are uploaded as artifacts for the packaging jobs below.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-cc:
+        name: Build C++ extensions (${{ matrix.os }}, py${{ matrix.python-version }})
+        needs: [check-version]
+        if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+                include:
+                    - os: ubuntu-latest
+                      ext: so
+                    - os: windows-latest
+                      ext: pyd
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Build C++ extensions and run tests
+              uses: ./.github/actions/build-cc
+              with:
+                  ext: ${{ matrix.ext }}
+                  artifact-name: cc-${{ matrix.os }}-py${{ matrix.python-version }}
+                  bazel-disk-cache: ${{ github.workflow }}-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Package a platform-specific wheel for each supported Python version.
+    # Downloads the pre-built C++ artifact — no Bazel compilation here.
+    # Linux wheels are repaired with auditwheel to produce manylinux wheels
+    # suitable for PyPI.  Windows wheels are uploaded as-is (win_amd64).
+    # ──────────────────────────────────────────────────────────────────────────
+    build-wheel:
+        name: Build wheel (${{ matrix.os }}, py${{ matrix.python-version }})
+        needs: [build-cc]
+        if: always() && needs.build-cc.result == 'success'
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+                include:
+                    - os: ubuntu-latest
+                      ext: so
+                    - os: windows-latest
+                      ext: pyd
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Package wheel
+              uses: ./.github/actions/build-wheel
+              with:
+                  ext: ${{ matrix.ext }}
+                  artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+                  cc-artifact-name: cc-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Build a pure-Python source distribution (sdist).
+    # Users who build from source will compile the extension themselves.
+    # ──────────────────────────────────────────────────────────────────────────
+    build-sdist:
+        name: Build source distribution
+        needs: [check-version]
+        if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+
+            - name: Build sdist
+              run: uv build --sdist
+
+            - name: Upload sdist
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+              with:
+                  name: sdist
+                  path: dist/*.tar.gz
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Install the built wheel directly from the artifact on each platform and
+    # run a functional smoke test.  Runs on every workflow trigger so the
+    # native extensions are always verified before any publishing step.
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-wheel:
+        name: Verify wheel install (${{ matrix.os }}, py${{ matrix.python-version }})
+        needs: [build-wheel]
+        if: always() && needs.build-wheel.result == 'success'
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Verify wheel
+              uses: ./.github/actions/verify-wheel
+              with:
+                  artifact-name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+                  python-version: ${{ matrix.python-version }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Publish all wheels + sdist to TestPyPI first.
+    # Uses OIDC trusted publishing — no API token required.
+    # Configure a pending publisher on test.pypi.org pointing at this workflow.
+    # ──────────────────────────────────────────────────────────────────────────
+    publish-test-pypi:
+        name: Publish to TestPyPI
+        needs: [verify-wheel, build-sdist]
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+
+        steps:
+            - name: Download all wheels
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  pattern: wheel-*
+                  path: dist
+                  merge-multiple: true
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Publish to TestPyPI
+              uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+              with:
+                  repository-url: https://test.pypi.org/legacy/
+                  skip-existing: true
+                  verbose: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Install from TestPyPI and run a functional smoke test on each platform.
+    #
+    # The smoke test goes beyond a simple import: it calls zero-argument C++
+    # functions (MaximumUnitTypeId, MaximumBuffId) to prove the native code
+    # actually executes, and asserts that the converter module exposes the
+    # expected Converter class and MakeConverter factory.
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-test-pypi:
+        name: Verify install from TestPyPI (${{ matrix.os }}, py${{ matrix.python-version }}, ${{ matrix.pkg }})
+        needs: [publish-test-pypi]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+                pkg: [pysc2_evolved, pysc2-evolved]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Install and smoke test
+              uses: ./.github/actions/smoke-test-converter
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  package-name: ${{ matrix.pkg }}
+                  index-url: https://test.pypi.org/simple/
+                  extra-index-url: https://pypi.org/simple
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Publish to production PyPI only after all TestPyPI verifications pass.
+    # Skipped on workflow_dispatch — production publishing only happens on release.
+    # ──────────────────────────────────────────────────────────────────────────
+    publish-pypi:
+        name: Publish to PyPI
+        needs: [verify-test-pypi]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        permissions:
+            id-token: write
+
+        steps:
+            - name: Download all wheels
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  pattern: wheel-*
+                  path: dist
+                  merge-multiple: true
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Publish to PyPI
+              uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+              with:
+                  verbose: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Smoke-test the production PyPI install on both platforms.
+    # Skipped on workflow_dispatch (publish-pypi is skipped, so this is too).
+    # ──────────────────────────────────────────────────────────────────────────
+    verify-pypi:
+        name: Verify install from PyPI (${{ matrix.os }}, py${{ matrix.python-version }}, ${{ matrix.pkg }})
+        needs: [publish-pypi]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.11", "3.12", "3.13"]
+                pkg: [pysc2_evolved, pysc2-evolved]
+
+        steps:
+            - name: Check-out repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Install and smoke test
+              uses: ./.github/actions/smoke-test-converter
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  package-name: ${{ matrix.pkg }}
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Attach all built artifacts to the GitHub Release.
+    # Runs in parallel with the PyPI pipeline.
+    # Skipped on workflow_dispatch — there is no release to attach to.
+    # ──────────────────────────────────────────────────────────────────────────
+    upload-github-assets:
+        name: Upload release assets
+        needs: [build-wheel, build-sdist]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        permissions:
+            contents: write
+
+        steps:
+            - name: Download all wheels
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  pattern: wheel-*
+                  path: dist
+                  merge-multiple: true
+
+            - name: Download sdist
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+              with:
+                  name: sdist
+                  path: dist
+
+            - name: Attach artifacts to GitHub Release
+              uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
+              with:
+                  files: dist/*

@@ -14,20 +14,18 @@
 
 import concurrent.futures
 import random
+import unittest
 
-from absl.testing import absltest
 import dm_env
-from dm_env import test_utils
 import numpy as np
-from pysc2_evolved.env import converted_env
-from pysc2_evolved.env import mock_sc2_env
-from pysc2_evolved.env import sc2_env
+import pytest
+from dm_env import test_utils
+from s2clientprotocol import common_pb2, sc2api_pb2
+
+from pysc2_evolved.env import converted_env, mock_sc2_env, sc2_env
 from pysc2_evolved.env.converter import converter
 from pysc2_evolved.env.converter.proto import converter_pb2
 from pysc2_evolved.lib import features
-
-from s2clientprotocol import common_pb2
-from s2clientprotocol import sc2api_pb2
 
 
 def _action(delay: int):
@@ -52,8 +50,8 @@ def _converter_factory(game_info: sc2api_pb2.ResponseGameInfo):
                 resolution=common_pb2.Size2DI(x=128, y=128),
             ),
             num_action_types=540,
-            num_unit_types=217,
-            num_upgrade_types=86,
+            num_unit_types=367,
+            num_upgrade_types=91,
             max_num_upgrades=40,
         ),
         environment_info=converter_pb2.EnvironmentInfo(game_info=game_info),
@@ -66,16 +64,17 @@ def _agent_interface_format():
     )
 
 
-class StreamedEnvTest(absltest.TestCase):
+@pytest.mark.minor
+class TestStreamedEnv:
     def _check_episode(self, stream):
         timestep = stream.reset()
-        self.assertIsNotNone(timestep)
+        assert timestep is not None
 
         while True:
             timestep = stream.step(_action(random.randint(1, 5)))
             if timestep.step_type == dm_env.StepType.LAST:
                 break
-        self.assertIsNotNone(timestep)
+        assert timestep is not None
 
     def test_single_player(self):
         env = converted_env.ConvertedEnvironment(
@@ -120,7 +119,8 @@ class StreamedEnvTest(absltest.TestCase):
                     f.result()
 
 
-class StreamedEnvConformanceTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
+@pytest.mark.minor
+class TestStreamedEnvConformance(test_utils.EnvironmentTestMixin, unittest.TestCase):
     def make_object_under_test(self):
         env = converted_env.ConvertedEnvironment(
             env=mock_sc2_env.SC2TestEnv(
@@ -137,7 +137,3 @@ class StreamedEnvConformanceTest(test_utils.EnvironmentTestMixin, absltest.TestC
         )
 
         return converted_env.make_streams(env)[0]
-
-
-if __name__ == "__main__":
-    absltest.main()

@@ -12,38 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from absl.testing import absltest
-from pysc2_evolved.env.converter.cc.game_data.proto import buffs_pb2
-from pysc2_evolved.env.converter.cc.game_data.proto import units_pb2
-from pysc2_evolved.env.converter.cc.game_data.proto import upgrades_pb2
+import pytest
+
+from pysc2_evolved.env.converter.cc.game_data.proto import (
+    buffs_pb2,
+    units_pb2,
+    upgrades_pb2,
+)
 from pysc2_evolved.env.converter.cc.game_data.python import uint8_lookup
 
 
-class Uint8LookupTest(absltest.TestCase):
+@pytest.mark.minor
+class TestUint8Lookup:
     def test_pysc2_to_uint8(self):
-        self.assertEqual(uint8_lookup.PySc2ToUint8(units_pb2.Zerg.InfestedTerran), 4)
+        assert uint8_lookup.PySc2ToUint8(units_pb2.Zerg.InfestedTerran) == 4
 
     def test_pysc2_to_uint8_buffs(self):
-        self.assertEqual(
-            uint8_lookup.PySc2ToUint8Buffs(buffs_pb2.Buffs.BlindingCloudStructure), 3
+        assert (
+            uint8_lookup.PySc2ToUint8Buffs(buffs_pb2.Buffs.BlindingCloudStructure) == 3
         )
 
     def test_pysc2_to_uint8_upgrades(self):
-        self.assertEqual(
-            uint8_lookup.PySc2ToUint8Upgrades(upgrades_pb2.Upgrades.Blink), 5
+        assert (
+            uint8_lookup.PySc2ToUint8Upgrades(upgrades_pb2.Upgrades.Blink) == 5
         )
 
     def test_uint8_to_pysc2(self):
-        self.assertEqual(uint8_lookup.Uint8ToPySc2(4), units_pb2.Zerg.InfestedTerran)
+        assert uint8_lookup.Uint8ToPySc2(4) == units_pb2.Zerg.InfestedTerran
 
     def test_uint8_to_pysc2_upgrades(self):
-        self.assertEqual(
-            uint8_lookup.Uint8ToPySc2Upgrades(5), upgrades_pb2.Upgrades.Blink
-        )
+        assert uint8_lookup.Uint8ToPySc2Upgrades(5) == upgrades_pb2.Upgrades.Blink
 
     def test_effect_id_identity(self):
-        self.assertEqual(uint8_lookup.EffectIdIdentity(17), 17)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert uint8_lookup.EffectIdIdentity(17) == 17

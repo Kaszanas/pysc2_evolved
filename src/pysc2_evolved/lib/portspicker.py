@@ -14,8 +14,8 @@
 """portpicker for multiple ports."""
 
 import time
-import portpicker
 
+import portpicker
 
 # The set of ports returned by pick_contiguous_unused_ports and not by
 # the underlying portpicker.

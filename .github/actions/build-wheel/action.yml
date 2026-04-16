@@ -1,0 +1,58 @@
+name: Build wheel
+description: >
+    Download pre-built C++ extensions from a CI artifact, copy them into the
+    source tree, and package a platform-specific wheel with uv.  No Bazel
+    compilation happens here — compilation is handled by the build-cc action.
+    Uploads the resulting wheel as a GitHub Actions artifact.
+
+inputs:
+    ext:
+        description: Compiled extension suffix — "so" (Linux/macOS) or "pyd" (Windows)
+        required: true
+    artifact-name:
+        description: Name for the uploaded wheel artifact
+        required: true
+    cc-artifact-name:
+        description: Name of the C++ extensions artifact produced by the build-cc action
+        required: true
+    python-version:
+        description: Python version to use for wheel packaging
+        required: false
+        default: "3.11"
+
+runs:
+    using: composite
+    steps:
+        - name: Install uv
+          uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+          with:
+              python-version: ${{ inputs.python-version }}
+
+        - name: Download compiled extensions
+          uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+          with:
+              name: ${{ inputs.cc-artifact-name }}
+              path: cc-dist
+
+        - name: Copy extensions into source tree
+          shell: bash
+          run: make place_extensions_local EXT=${{ inputs.ext }} SRCDIR=cc-dist
+
+        - name: Build wheel
+          shell: bash
+          run: make build_wheel_local
+
+        - name: Repair wheel for manylinux compliance (Linux only)
+          if: runner.os == 'Linux'
+          shell: bash
+          run: |
+              pip install auditwheel
+              auditwheel repair dist/*.whl --wheel-dir dist-repaired/
+              rm dist/*.whl
+              mv dist-repaired/*.whl dist/
+
+        - name: Upload wheel
+          uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+          with:
+              name: ${{ inputs.artifact-name }}
+              path: dist/*.whl

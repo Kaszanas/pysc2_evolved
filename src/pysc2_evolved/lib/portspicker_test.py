@@ -14,32 +14,29 @@
 # limitations under the License.
 """Tests for portspicker.py."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+import pytest
+
 from pysc2_evolved.lib import portspicker
 
 
-class PortsTest(parameterized.TestCase):
-    @parameterized.parameters(range(1, 10))
-    def testNonContiguousReservation(self, num_ports):
+@pytest.mark.minor
+class TestPorts:
+    @pytest.mark.parametrize("num_ports", range(1, 10))
+    def test_non_contiguous_reservation(self, num_ports):
         reserved = portspicker.pick_unused_ports(num_ports)
-        self.assertLen(reserved, num_ports)
+        assert len(reserved) == num_ports
         portspicker.return_ports(reserved)
 
-    @parameterized.parameters(range(2, 5))
-    def testContiguousReservation(self, num_ports):
+    @pytest.mark.parametrize("num_ports", range(2, 5))
+    def test_contiguous_reservation(self, num_ports):
         reserved = portspicker.pick_contiguous_unused_ports(num_ports)
-        self.assertLen(reserved, num_ports)
+        assert len(reserved) == num_ports
         portspicker.return_ports(reserved)
 
-    def testInvalidReservation(self):
-        with self.assertRaises(ValueError):
+    def test_invalid_reservation(self):
+        with pytest.raises(ValueError):
             portspicker.pick_unused_ports(0)
 
-    def testInvalidContiguousReservation(self):
-        with self.assertRaises(ValueError):
+    def test_invalid_contiguous_reservation(self):
+        with pytest.raises(ValueError):
             portspicker.pick_contiguous_unused_ports(0)
-
-
-if __name__ == "__main__":
-    absltest.main()

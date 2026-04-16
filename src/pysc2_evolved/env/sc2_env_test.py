@@ -14,43 +14,48 @@
 # limitations under the License.
 """Test for sc2_env."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+import pytest
 
 from pysc2_evolved.env import sc2_env
 
 
-class TestNameCroppingAndDeduplication(parameterized.TestCase):
-    @parameterized.named_parameters(
-        ("empty", [], []),
-        ("single_no_crop", ["agent_1"], ["agent_1"]),
-        (
+@pytest.mark.minor
+class TestNameCroppingAndDeduplication:
+    @pytest.mark.parametrize(
+        "names,expected_output",
+        [
+            ([], []),
+            (["agent_1"], ["agent_1"]),
+            (
+                ["very_long_agent_name_experimental_1"],
+                ["very_long_agent_name_experimenta"],
+            ),
+            (["agent_1", "agent_2"], ["agent_1", "agent_2"]),
+            (
+                [
+                    "a_very_long_agent_name_experimental",
+                    "b_very_long_agent_name_experimental",
+                ],
+                ["a_very_long_agent_name_experimen", "b_very_long_agent_name_experimen"],
+            ),
+            (["agent_1", "agent_1"], ["(1) agent_1", "(2) agent_1"]),
+            (
+                [
+                    "very_long_agent_name_experimental_c123",
+                    "very_long_agent_name_experimental_c456",
+                ],
+                ["(1) very_long_agent_name_experim", "(2) very_long_agent_name_experim"],
+            ),
+        ],
+        ids=[
+            "empty",
+            "single_no_crop",
             "single_cropped",
-            ["very_long_agent_name_experimental_1"],
-            ["very_long_agent_name_experimenta"],
-        ),
-        ("no_dupes_no_crop", ["agent_1", "agent_2"], ["agent_1", "agent_2"]),
-        (
+            "no_dupes_no_crop",
             "no_dupes_cropped",
-            [
-                "a_very_long_agent_name_experimental",
-                "b_very_long_agent_name_experimental",
-            ],
-            ["a_very_long_agent_name_experimen", "b_very_long_agent_name_experimen"],
-        ),
-        ("dupes_no_crop", ["agent_1", "agent_1"], ["(1) agent_1", "(2) agent_1"]),
-        (
+            "dupes_no_crop",
             "dupes_cropped",
-            [
-                "very_long_agent_name_experimental_c123",
-                "very_long_agent_name_experimental_c456",
-            ],
-            ["(1) very_long_agent_name_experim", "(2) very_long_agent_name_experim"],
-        ),
+        ],
     )
     def test(self, names, expected_output):
-        self.assertEqual(sc2_env.crop_and_deduplicate_names(names), expected_output)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert sc2_env.crop_and_deduplicate_names(names) == expected_output

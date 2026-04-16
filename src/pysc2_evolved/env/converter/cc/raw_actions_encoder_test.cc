@@ -51,7 +51,7 @@ constexpr int kMaxSelectionSize = 64;
 
 SC2APIProtocol::ResponseObservation GetResponseObservation() {
   const std::string fname = (
-      "pysc2_evolved/env/"
+      "src/pysc2_evolved/env/"
       "converter/cc/test_data/obs_data1.pbtxt");
   SC2APIProtocol::ResponseObservation obs;
   absl::Status status = GetTextProto(fname, &obs);

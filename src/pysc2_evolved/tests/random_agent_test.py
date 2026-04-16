@@ -14,31 +14,30 @@
 # limitations under the License.
 """Run a random agent for a few steps."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
+import pytest
 
 from pysc2_evolved.agents import random_agent
-from pysc2_evolved.env import run_loop
-from pysc2_evolved.env import sc2_env
+from pysc2_evolved.env import run_loop, sc2_env
 from pysc2_evolved.tests import utils
 
 
-class TestRandomAgent(parameterized.TestCase, utils.TestCase):
-    @parameterized.named_parameters(
-        (
-            "features",
+@pytest.mark.sc2
+@pytest.mark.parametrize(
+    "agent_interface_format",
+    [
+        pytest.param(
             sc2_env.AgentInterfaceFormat(
                 feature_dimensions=sc2_env.Dimensions(screen=84, minimap=64)
             ),
+            id="features",
         ),
-        (
-            "rgb",
+        pytest.param(
             sc2_env.AgentInterfaceFormat(
                 rgb_dimensions=sc2_env.Dimensions(screen=128, minimap=64)
             ),
+            id="rgb",
         ),
-        (
-            "all",
+        pytest.param(
             sc2_env.AgentInterfaceFormat(
                 feature_dimensions=sc2_env.Dimensions(screen=84, minimap=64),
                 rgb_dimensions=sc2_env.Dimensions(screen=128, minimap=64),
@@ -46,8 +45,11 @@ class TestRandomAgent(parameterized.TestCase, utils.TestCase):
                 use_unit_counts=True,
                 use_feature_units=True,
             ),
+            id="all",
         ),
-    )
+    ],
+)
+class TestRandomAgent(utils.TestCase):
     def test_random_agent(self, agent_interface_format):
         steps = 250
         step_mul = 8
@@ -68,8 +70,4 @@ class TestRandomAgent(parameterized.TestCase, utils.TestCase):
             agent = random_agent.RandomAgent()
             run_loop.run_loop([agent], env, steps)
 
-        self.assertEqual(agent.steps, steps)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert agent.steps == steps

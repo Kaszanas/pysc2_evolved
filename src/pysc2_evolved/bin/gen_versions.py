@@ -14,9 +14,11 @@
 # limitations under the License.
 """Generate the list of versions for run_configs."""
 
-from absl import app
 import requests
+from absl import app
 
+# REVIEW: Note that this returns only the versions that are supported
+# REVIEW: by the Linux packages.
 # raw version of:
 # https://github.com/Blizzard/s2client-proto/blob/master/buildinfo/versions.json
 VERSIONS_FILE = "https://raw.githubusercontent.com/Blizzard/s2client-proto/master/buildinfo/versions.json"

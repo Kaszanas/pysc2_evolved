@@ -1,0 +1,1 @@
+# src/ package — required for Bazel to traverse into src/pysc2_evolved/

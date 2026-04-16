@@ -14,35 +14,34 @@
 # limitations under the License.
 """Tests for np_util.py."""
 
-from absl.testing import absltest
-from absl.testing import parameterized
 import numpy as np
+import pytest
+
 from pysc2_evolved.lib import np_util
 
 
-class NpUtilTest(parameterized.TestCase):
-    @parameterized.named_parameters(
-        ("no_diff_1d", [1, 2, 3, 4], [1, 2, 3, 4], ""),
-        ("no_diff_2d", [[1, 2], [3, 4]], [[1, 2], [3, 4]], ""),
-        (
-            "diff_1d",
-            [1, 2, 3, 4],
-            [1, 3, 2, 4],
-            "2 element(s) changed - [1]: 2 -> 3; [2]: 3 -> 2",
-        ),
-        (
-            "diff_2d",
-            [[1, 2], [3, 4]],
-            [[1, 3], [2, 4]],
-            "2 element(s) changed - [0][1]: 2 -> 3; [1][0]: 3 -> 2",
-        ),
+@pytest.mark.minor
+class TestNpUtil:
+    @pytest.mark.parametrize(
+        "lhs,rhs,expected",
+        [
+            ([1, 2, 3, 4], [1, 2, 3, 4], ""),
+            ([[1, 2], [3, 4]], [[1, 2], [3, 4]], ""),
+            (
+                [1, 2, 3, 4],
+                [1, 3, 2, 4],
+                "2 element(s) changed - [1]: 2 -> 3; [2]: 3 -> 2",
+            ),
+            (
+                [[1, 2], [3, 4]],
+                [[1, 3], [2, 4]],
+                "2 element(s) changed - [0][1]: 2 -> 3; [1][0]: 3 -> 2",
+            ),
+        ],
+        ids=["no_diff_1d", "no_diff_2d", "diff_1d", "diff_2d"],
     )
-    def testSummarizeArrayDiffs(self, lhs, rhs, expected):
+    def test_summarize_array_diffs(self, lhs, rhs, expected):
         a = np.array(lhs)
         b = np.array(rhs)
         result = np_util.summarize_array_diffs(a, b)
-        self.assertEqual(result, expected)
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert result == expected

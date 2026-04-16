@@ -14,18 +14,17 @@
 # limitations under the License.
 """Test that the debug commands work."""
 
-from absl.testing import absltest
-
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import units
-
+import pytest
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import units
 
-class DebugTest(absltest.TestCase):
+
+@pytest.mark.sc2
+class TestDebug:
     def test_multi_player(self):
         run_config = run_configs.get()
         map_inst = maps.get("Simple64")
@@ -61,7 +60,7 @@ class DebugTest(absltest.TestCase):
                     if u.unit_type == units.Terran.Marine
                 }
 
-            self.assertEmpty(get_marines(obs))
+            assert not get_marines(obs)
 
             controller.debug(
                 sc_debug.DebugCommand(
@@ -79,7 +78,7 @@ class DebugTest(absltest.TestCase):
             obs = controller.observe()
 
             marines = get_marines(obs)
-            self.assertLen(marines, 5)
+            assert len(marines) == 5
 
             tags = sorted(marines.keys())
 
@@ -103,10 +102,6 @@ class DebugTest(absltest.TestCase):
             obs = controller.observe()
 
             marines = get_marines(obs)
-            self.assertLen(marines, 4)
-            self.assertNotIn(tags[0], marines)
-            self.assertEqual(marines[tags[1]].health, 5)
-
-
-if __name__ == "__main__":
-    absltest.main()
+            assert len(marines) == 4
+            assert tags[0] not in marines
+            assert marines[tags[1]].health == 5

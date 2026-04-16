@@ -14,17 +14,12 @@
 # limitations under the License.
 """Test that various observations do what you'd expect."""
 
-from absl.testing import absltest
-
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import buffs
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import units
-from pysc2_evolved.tests import utils
-
+import pytest
 from s2clientprotocol import debug_pb2 as sc_debug
 from s2clientprotocol import raw_pb2 as sc_raw
 
+from pysc2_evolved.lib import actions, buffs, features, units
+from pysc2_evolved.tests import utils
 
 # It seems the time from issuing an action until it has an effect is 2 frames.
 # It'd be nice if that was faster, and it is 1 in single-player, but in
@@ -33,7 +28,8 @@ from s2clientprotocol import raw_pb2 as sc_raw
 EXPECTED_ACTION_DELAY = 2
 
 
-class ObsTest(utils.GameReplayTestCase):
+@pytest.mark.sc2
+class TestObs(utils.GameReplayTestCase):
     @utils.GameReplayTestCase.setup()
     def test_hallucination(self):
         self.god()
@@ -65,8 +61,8 @@ class ObsTest(utils.GameReplayTestCase):
         # Verify the owner knows it's a hallucination, but the opponent doesn't.
         p1 = utils.get_unit(obs[0], unit_type=units.Protoss.Archon)
         p2 = utils.get_unit(obs[1], unit_type=units.Protoss.Archon)
-        self.assertTrue(p1.is_hallucination)
-        self.assertFalse(p2.is_hallucination)
+        assert p1.is_hallucination
+        assert not p2.is_hallucination
 
         # Create an observer so the opponent has detection.
         self.create_unit(unit_type=units.Protoss.Observer, owner=2, pos=(28, 30))
@@ -77,12 +73,12 @@ class ObsTest(utils.GameReplayTestCase):
         # Verify the opponent now also knows it's a hallucination.
         p1 = utils.get_unit(obs[0], unit_type=units.Protoss.Archon)
         p2 = utils.get_unit(obs[1], unit_type=units.Protoss.Archon)
-        self.assertTrue(p1.is_hallucination)
-        self.assertTrue(p2.is_hallucination)
+        assert p1.is_hallucination
+        assert p2.is_hallucination
 
     @utils.GameReplayTestCase.setup(show_cloaked=False)
     def test_hide_cloaked(self):
-        self.assertFalse(self._info.options.show_cloaked)
+        assert not self._info.options.show_cloaked
 
         self.god()
         self.move_camera(32, 32)
@@ -105,7 +101,7 @@ class ObsTest(utils.GameReplayTestCase):
             shield=80,
             cloak=sc_raw.CloakedAllied,
         )
-        self.assertIsNone(p2)
+        assert p2 is None
 
         screen1 = self._features.transform_obs(obs[0])["feature_screen"]
         screen2 = self._features.transform_obs(obs[1])["feature_screen"]
@@ -168,7 +164,7 @@ class ObsTest(utils.GameReplayTestCase):
 
     @utils.GameReplayTestCase.setup()
     def test_show_cloaked(self):
-        self.assertTrue(self._info.options.show_cloaked)
+        assert self._info.options.show_cloaked
 
         self.god()
         self.move_camera(32, 32)
@@ -272,8 +268,8 @@ class ObsTest(utils.GameReplayTestCase):
 
         self.assert_point(archon.pos, (20, 30))
         self.assert_point(observer.pos, (40, 30))
-        self.assertLess(archon.pos.z, observer.pos.z)  # The observer flies.
-        self.assertGreater(archon.radius, observer.radius)
+        assert archon.pos.z < observer.pos.z  # The observer flies.
+        assert archon.radius > observer.radius
 
         # Move them towards the center, make sure they move.
         self.raw_unit_command(0, "Move_screen", (archon.tag, observer.tag), (30, 25))
@@ -284,9 +280,9 @@ class ObsTest(utils.GameReplayTestCase):
         archon2 = utils.get_unit(obs2[0], unit_type=units.Protoss.Archon)
         observer2 = utils.get_unit(obs2[0], unit_type=units.Protoss.Observer)
 
-        self.assertGreater(archon2.pos.x, 20)
-        self.assertLess(observer2.pos.x, 40)
-        self.assertLess(archon2.pos.z, observer2.pos.z)
+        assert archon2.pos.x > 20
+        assert observer2.pos.x < 40
+        assert archon2.pos.z < observer2.pos.z
 
     @utils.GameReplayTestCase.setup()
     def test_fog(self):
@@ -315,8 +311,8 @@ class ObsTest(utils.GameReplayTestCase):
             sc_raw.Self,
             sc_raw.CloakedAllied,
         )
-        self.assertIsNone(utils.get_unit(obs[1], unit_type=units.Protoss.Sentry))
-        self.assertIsNone(utils.get_unit(obs[1], unit_type=units.Protoss.DarkTemplar))
+        assert utils.get_unit(obs[1], unit_type=units.Protoss.Sentry) is None
+        assert utils.get_unit(obs[1], unit_type=units.Protoss.DarkTemplar) is None
 
         obs = self.observe(disable_fog=True)
 
@@ -385,39 +381,27 @@ class ObsTest(utils.GameReplayTestCase):
         self.step(16)
         obs = self.observe()
 
-        self.assertIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[0], tag=sentry.tag).buff_ids
-        )
-        self.assertIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[1], tag=sentry.tag).buff_ids
-        )
-        self.assertIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[0], tag=stalker.tag).buff_ids
-        )
-        self.assertIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[1], tag=stalker.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[0], tag=pheonix.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GuardianShield, utils.get_unit(obs[1], tag=pheonix.tag).buff_ids
-        )
+        assert buffs.Buffs.GuardianShield in utils.get_unit(obs[0], tag=sentry.tag).buff_ids
+        assert buffs.Buffs.GuardianShield in utils.get_unit(obs[1], tag=sentry.tag).buff_ids
+        assert buffs.Buffs.GuardianShield in utils.get_unit(obs[0], tag=stalker.tag).buff_ids
+        assert buffs.Buffs.GuardianShield in utils.get_unit(obs[1], tag=stalker.tag).buff_ids
+        assert buffs.Buffs.GuardianShield not in utils.get_unit(obs[0], tag=pheonix.tag).buff_ids
+        assert buffs.Buffs.GuardianShield not in utils.get_unit(obs[1], tag=pheonix.tag).buff_ids
 
         # Both players should see the shield.
         e = get_effect_proto(obs[0], features.Effects.GuardianShield)
-        self.assertIsNotNone(e)
+        assert e is not None
         self.assert_point(e.pos[0], (30, 30))
-        self.assertEqual(e.alliance, sc_raw.Self)
-        self.assertEqual(e.owner, 1)
-        self.assertGreater(e.radius, 3)
+        assert e.alliance == sc_raw.Self
+        assert e.owner == 1
+        assert e.radius > 3
 
         e = get_effect_proto(obs[1], features.Effects.GuardianShield)
-        self.assertIsNotNone(e)
+        assert e is not None
         self.assert_point(e.pos[0], (30, 30))
-        self.assertEqual(e.alliance, sc_raw.Enemy)
-        self.assertEqual(e.owner, 1)
-        self.assertGreater(e.radius, 3)
+        assert e.alliance == sc_raw.Enemy
+        assert e.owner == 1
+        assert e.radius > 3
 
         # Should show up on the feature layers too.
         transformed_obs1 = self._features.transform_obs(obs[0])
@@ -458,13 +442,13 @@ class ObsTest(utils.GameReplayTestCase):
         # Also in the raw_effects.
         raw1 = transformed_obs1["raw_effects"]
         e = get_effect_obs(raw1, features.Effects.GuardianShield)
-        self.assertIsNotNone(e)
+        assert e is not None
         # Not located at (30, 30) due to map shape and minimap coords.
-        self.assertGreater(e.x, 20)
-        self.assertGreater(e.y, 20)
-        self.assertEqual(e.alliance, sc_raw.Self)
-        self.assertEqual(e.owner, 1)
-        self.assertGreater(e.radius, 3)
+        assert e.x > 20
+        assert e.y > 20
+        assert e.alliance == sc_raw.Self
+        assert e.owner == 1
+        assert e.radius > 3
 
         self.raw_unit_command(
             1, "Effect_GravitonBeam_screen", pheonix.tag, target=stalker.tag
@@ -473,24 +457,12 @@ class ObsTest(utils.GameReplayTestCase):
         self.step(32)
         obs = self.observe()
 
-        self.assertIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[0], tag=stalker.tag).buff_ids
-        )
-        self.assertIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[1], tag=stalker.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[0], tag=sentry.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[1], tag=sentry.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[0], tag=pheonix.tag).buff_ids
-        )
-        self.assertNotIn(
-            buffs.Buffs.GravitonBeam, utils.get_unit(obs[1], tag=pheonix.tag).buff_ids
-        )
+        assert buffs.Buffs.GravitonBeam in utils.get_unit(obs[0], tag=stalker.tag).buff_ids
+        assert buffs.Buffs.GravitonBeam in utils.get_unit(obs[1], tag=stalker.tag).buff_ids
+        assert buffs.Buffs.GravitonBeam not in utils.get_unit(obs[0], tag=sentry.tag).buff_ids
+        assert buffs.Buffs.GravitonBeam not in utils.get_unit(obs[1], tag=sentry.tag).buff_ids
+        assert buffs.Buffs.GravitonBeam not in utils.get_unit(obs[0], tag=pheonix.tag).buff_ids
+        assert buffs.Buffs.GravitonBeam not in utils.get_unit(obs[1], tag=pheonix.tag).buff_ids
 
     @utils.GameReplayTestCase.setup()
     def test_active(self):
@@ -514,7 +486,7 @@ class ObsTest(utils.GameReplayTestCase):
             # Own Nexus is idle
             nexus = utils.get_unit(o, unit_type=units.Protoss.Nexus, owner=i + 1)
             self.assert_unit(nexus, display_type=sc_raw.Visible, is_active=False)
-            self.assertEmpty(nexus.orders)
+            assert len(nexus.orders) == 0
 
             # Give it an action.
             self.raw_unit_command(i, "Train_Probe_quick", nexus.tag)
@@ -545,9 +517,9 @@ class ObsTest(utils.GameReplayTestCase):
         self.assert_unit(nexus0, display_type=sc_raw.Visible, is_active=True)
         self.assert_unit(nexus1, display_type=sc_raw.Visible, is_active=True)
         self.assert_unit(nexus2, display_type=sc_raw.Visible, is_active=True)
-        self.assertLen(nexus0.orders, 1)
-        self.assertLen(nexus2.orders, 1)
-        self.assertEmpty(nexus1.orders)  # Can't see opponent's orders
+        assert len(nexus0.orders) == 1
+        assert len(nexus2.orders) == 1
+        assert len(nexus1.orders) == 0  # Can't see opponent's orders
 
         # Go back to a snapshot
         self.kill_unit(utils.get_unit(obs[0], unit_type=units.Protoss.Observer).tag)
@@ -555,7 +527,7 @@ class ObsTest(utils.GameReplayTestCase):
         self.step(100)  # Make sure visibility updates.
         obs = self.observe()
 
-        self.assertIsNone(utils.get_unit(obs[0], unit_type=units.Protoss.Observer))
+        assert utils.get_unit(obs[0], unit_type=units.Protoss.Observer) is None
 
         # Own Nexus is now active, snapshot isn't.
         nexus0 = utils.get_unit(obs[0], unit_type=units.Protoss.Nexus, owner=1)
@@ -564,9 +536,9 @@ class ObsTest(utils.GameReplayTestCase):
         self.assert_unit(nexus0, display_type=sc_raw.Visible, is_active=True)
         self.assert_unit(nexus1, display_type=sc_raw.Snapshot, is_active=False)
         self.assert_unit(nexus2, display_type=sc_raw.Visible, is_active=True)
-        self.assertLen(nexus0.orders, 1)
-        self.assertLen(nexus2.orders, 1)
-        self.assertEmpty(nexus1.orders)  # Can't see opponent's orders
+        assert len(nexus0.orders) == 1
+        assert len(nexus2.orders) == 1
+        assert len(nexus1.orders) == 0  # Can't see opponent's orders
 
     @utils.GameReplayTestCase.setup(disable_fog=True)
     def test_disable_fog(self):
@@ -582,8 +554,8 @@ class ObsTest(utils.GameReplayTestCase):
             other = utils.get_unit(o, unit_type=units.Protoss.Nexus, owner=2 - i)
             self.assert_unit(own, display_type=sc_raw.Visible, is_active=False)
             self.assert_unit(other, display_type=sc_raw.Visible, is_active=False)
-            self.assertEmpty(own.orders)
-            self.assertEmpty(other.orders)
+            assert len(own.orders) == 0
+            assert len(other.orders) == 0
 
             # Give it an action.
             self.raw_unit_command(i, "Train_Probe_quick", own.tag)
@@ -597,8 +569,8 @@ class ObsTest(utils.GameReplayTestCase):
             other = utils.get_unit(o, unit_type=units.Protoss.Nexus, owner=2 - i)
             self.assert_unit(own, display_type=sc_raw.Visible, is_active=True)
             self.assert_unit(other, display_type=sc_raw.Visible, is_active=True)
-            self.assertLen(own.orders, 1)
-            self.assertEmpty(other.orders)
+            assert len(own.orders) == 1
+            assert len(other.orders) == 0
 
     @utils.GameReplayTestCase.setup()
     def test_action_delay(self):
@@ -607,44 +579,45 @@ class ObsTest(utils.GameReplayTestCase):
 
         self.step(16)
         obs1 = self.observe()
-        self.assertLen(obs1[0].actions, 0)
+        assert len(obs1[0].actions) == 0
 
         zealot1 = utils.get_unit(obs1[0], unit_type=units.Protoss.Zealot, owner=1)
-        self.assertLen(zealot1.orders, 0)
+        assert len(zealot1.orders) == 0
 
         self.raw_unit_command(0, "Move_screen", zealot1.tag, (30, 30))
 
         # If the delay is taken down to 1, remove this first step of verifying the
         # actions length is 0.
-        self.assertEqual(EXPECTED_ACTION_DELAY, 2)
+        assert EXPECTED_ACTION_DELAY == 2
 
         self.step(1)
         obs2 = self.observe()
-        self.assertLen(obs2[0].action_errors, 0)
-        self.assertLen(obs2[0].actions, 0)
+        assert len(obs2[0].action_errors) == 0
+        assert len(obs2[0].actions) == 0
 
         self.step(1)
         obs2 = self.observe()
-        self.assertLen(obs2[0].action_errors, 0)
-        self.assertGreaterEqual(len(obs2[0].actions), 1)
+        assert len(obs2[0].action_errors) == 0
+        assert len(obs2[0].actions) >= 1
         for action in obs2[0].actions:
             if action.HasField("action_raw"):
                 break
         else:
-            self.assertFalse("No raw action found")
+            assert False, "No raw action found"
 
-        self.assertEqual(action.game_loop, obs1[0].observation.game_loop + 1)  # pylint: disable=undefined-loop-variable
+        assert action.game_loop == obs1[0].observation.game_loop + 1  # pylint: disable=undefined-loop-variable
         unit_command = action.action_raw.unit_command  # pylint: disable=undefined-loop-variable
-        self.assertEqual(
-            unit_command.ability_id, actions.FUNCTIONS.Move_Move_screen.ability_id
+        assert (
+            unit_command.ability_id == actions.FUNCTIONS.Move_Move_screen.ability_id
         )
         self.assert_point(unit_command.target_world_space_pos, (30, 30))
-        self.assertEqual(unit_command.unit_tags[0], zealot1.tag)
+        assert unit_command.unit_tags[0] == zealot1.tag
 
         zealot2 = utils.get_unit(obs2[0], unit_type=units.Protoss.Zealot, owner=1)
-        self.assertLen(zealot2.orders, 1)
-        self.assertEqual(
-            zealot2.orders[0].ability_id, actions.FUNCTIONS.Move_Move_screen.ability_id
+        assert len(zealot2.orders) == 1
+        assert (
+            zealot2.orders[0].ability_id
+            == actions.FUNCTIONS.Move_Move_screen.ability_id
         )
         self.assert_point(zealot2.orders[0].target_world_space_pos, (30, 30))
 
@@ -659,7 +632,7 @@ class ObsTest(utils.GameReplayTestCase):
         screen2 = self._features.transform_obs(obs2[0])["feature_screen"]
         nexus2 = utils.xy_locs(screen2.unit_type == units.Protoss.Nexus)
 
-        self.assertEqual(nexus1, nexus2)  # Same place.
+        assert nexus1 == nexus2  # Same place.
 
         loc = obs1[0].observation.raw_data.player.camera
         self.move_camera(loc.x + 3, loc.y + 3)
@@ -670,8 +643,4 @@ class ObsTest(utils.GameReplayTestCase):
         screen3 = self._features.transform_obs(obs3[0])["feature_screen"]
         nexus3 = utils.xy_locs(screen3.unit_type == units.Protoss.Nexus)
 
-        self.assertNotEqual(nexus1, nexus3)  # Different location due to camera.
-
-
-if __name__ == "__main__":
-    absltest.main()
+        assert nexus1 != nexus3  # Different location due to camera.

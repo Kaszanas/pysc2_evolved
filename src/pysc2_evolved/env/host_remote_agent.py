@@ -13,14 +13,11 @@
 # limitations under the License.
 """Creates SC2 processes and games for remote agents to connect into."""
 
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import portspicker
-from pysc2_evolved.lib import protocol
-from pysc2_evolved.lib import remote_controller
-
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.lib import portspicker, protocol, remote_controller
 
 
 class VsAgent(object):

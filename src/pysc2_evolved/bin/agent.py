@@ -16,177 +16,397 @@
 
 import importlib
 import threading
+from dataclasses import dataclass
+from typing import List, TypeVar
 
-from absl import app
-from absl import flags
+import click
 
 from pysc2_evolved import maps
-from pysc2_evolved.env import available_actions_printer
-from pysc2_evolved.env import run_loop
-from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import point_flag
+from pysc2_evolved.agents.base_agent import BaseAgent
+from pysc2_evolved.env import available_actions_printer, run_loop, sc2_env
 from pysc2_evolved.lib import stopwatch
 
-
-FLAGS = flags.FLAGS
-flags.DEFINE_bool("render", True, "Whether to render with pygame.")
-point_flag.DEFINE_point(
-    "feature_screen_size", "84", "Resolution for screen feature layers."
-)
-point_flag.DEFINE_point(
-    "feature_minimap_size", "64", "Resolution for minimap feature layers."
-)
-point_flag.DEFINE_point("rgb_screen_size", None, "Resolution for rendered screen.")
-point_flag.DEFINE_point("rgb_minimap_size", None, "Resolution for rendered minimap.")
-flags.DEFINE_enum(
-    "action_space",
-    None,
-    sc2_env.ActionSpace._member_names_,  # pylint: disable=protected-access
-    "Which action space to use. Needed if you take both feature and rgb observations.",
-)
-flags.DEFINE_bool("use_feature_units", False, "Whether to include feature units.")
-flags.DEFINE_bool("use_raw_units", False, "Whether to include raw units.")
-flags.DEFINE_bool("disable_fog", False, "Whether to disable Fog of War.")
-
-flags.DEFINE_integer("max_agent_steps", 0, "Total agent steps.")
-flags.DEFINE_integer("game_steps_per_episode", None, "Game steps per episode.")
-flags.DEFINE_integer("max_episodes", 0, "Total episodes.")
-flags.DEFINE_integer("step_mul", 8, "Game steps per agent step.")
-
-flags.DEFINE_string(
-    "agent",
-    "pysc2_evolved.agents.random_agent.RandomAgent",
-    "Which agent to run, as a python path to an Agent class.",
-)
-flags.DEFINE_string(
-    "agent_name", None, "Name of the agent in replays. Defaults to the class name."
-)
-flags.DEFINE_enum(
-    "agent_race",
-    "random",
-    sc2_env.Race._member_names_,  # pylint: disable=protected-access
-    "Agent 1's race.",
-)
-
-flags.DEFINE_string("agent2", "Bot", "Second agent, either Bot or agent class.")
-flags.DEFINE_string(
-    "agent2_name", None, "Name of the agent in replays. Defaults to the class name."
-)
-flags.DEFINE_enum(
-    "agent2_race",
-    "random",
-    sc2_env.Race._member_names_,  # pylint: disable=protected-access
-    "Agent 2's race.",
-)
-flags.DEFINE_enum(
-    "difficulty",
-    "very_easy",
-    sc2_env.Difficulty._member_names_,  # pylint: disable=protected-access
-    "If agent2 is a built-in Bot, it's strength.",
-)
-flags.DEFINE_enum(
-    "bot_build",
-    "random",
-    sc2_env.BotBuild._member_names_,  # pylint: disable=protected-access
-    "Bot's build strategy.",
-)
-
-flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
-flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
-flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
-
-flags.DEFINE_bool("save_replay", True, "Whether to save a replay at the end.")
-
-flags.DEFINE_string("map", None, "Name of a map to use.")
-flags.DEFINE_bool("battle_net_map", False, "Use the battle.net map version.")
-flags.mark_flag_as_required("map")
+ImplementsBaseAgent = TypeVar("ImplementsBaseAgent", bound=BaseAgent)
 
 
-def run_thread(agent_classes, players, map_name, visualize):
+@dataclass
+class RunThreadArgs:
+    agent_classes: List[ImplementsBaseAgent]
+    players: List[sc2_env.Agent]
+    map_name: str
+    visualize: bool
+
+    battle_net_map: bool
+    feature_screen_size: int
+    feature_minimap_size: int
+    rgb_screen_size: str
+    rgb_minimap_size: str
+    action_space: str
+    use_feature_units: bool
+    use_raw_units: bool
+    step_mul: int
+    game_steps_per_episode: int
+    disable_fog: bool
+
+
+def run_thread(run_thread_args: RunThreadArgs):
     """Run one thread worth of the environment with agents."""
     with sc2_env.SC2Env(
-        map_name=map_name,
-        battle_net_map=FLAGS.battle_net_map,
-        players=players,
+        map_name=run_thread_args.map_name,
+        battle_net_map=run_thread_args.battle_net_map,
+        players=run_thread_args.players,
         agent_interface_format=sc2_env.parse_agent_interface_format(
-            feature_screen=FLAGS.feature_screen_size,
-            feature_minimap=FLAGS.feature_minimap_size,
-            rgb_screen=FLAGS.rgb_screen_size,
-            rgb_minimap=FLAGS.rgb_minimap_size,
-            action_space=FLAGS.action_space,
-            use_feature_units=FLAGS.use_feature_units,
-            use_raw_units=FLAGS.use_raw_units,
+            feature_screen=run_thread_args.feature_screen_size,
+            feature_minimap=run_thread_args.feature_minimap_size,
+            rgb_screen=run_thread_args.rgb_screen_size,
+            rgb_minimap=run_thread_args.rgb_minimap_size,
+            action_space=run_thread_args.action_space,
+            use_feature_units=run_thread_args.use_feature_units,
+            use_raw_units=run_thread_args.use_raw_units,
         ),
-        step_mul=FLAGS.step_mul,
-        game_steps_per_episode=FLAGS.game_steps_per_episode,
-        disable_fog=FLAGS.disable_fog,
-        visualize=visualize,
+        step_mul=run_thread_args.step_mul,
+        game_steps_per_episode=run_thread_args.game_steps_per_episode,
+        disable_fog=run_thread_args.disable_fog,
+        visualize=run_thread_args.visualize,
     ) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agents = [agent_cls() for agent_cls in agent_classes]
-        run_loop.run_loop(agents, env, FLAGS.max_agent_steps, FLAGS.max_episodes)
-        if FLAGS.save_replay:
-            env.save_replay(agent_classes[0].__name__)
+        agents = [agent_cls() for agent_cls in run_thread_args.agent_classes]
+        run_loop.run_loop(
+            agents=agents,
+            env=env,
+            max_frames=run_thread_args.max_agent_steps,
+            max_episodes=run_thread_args.max_episodes,
+        )
+        if run_thread_args.save_replay:
+            env.save_replay(run_thread_args.agent_classes[0].__name__)
 
 
-def main(unused_argv):
+def run_agent(
+    render: bool,
+    feature_screen_size: int,
+    feature_minimap_size: int,
+    rgb_screen_size: str,
+    rgb_minimap_size: str,
+    action_space: str,
+    use_feature_units: bool,
+    use_raw_units: bool,
+    enable_fog: bool,
+    max_agent_steps: int,
+    game_steps_per_episode: int,
+    max_episodes: int,
+    step_mul: int,
+    agent: str,
+    agent_name: str,
+    agent_race: str,
+    agent2: str,
+    agent2_name: str,
+    agent2_race: str,
+    difficulty: str,
+    bot_build: str,
+    profile: bool,
+    trace: bool,
+    parallel: int,
+    save_replay: bool,
+    map_name: str,
+    battle_net_map: bool,
+):
     """Run an agent."""
-    if FLAGS.trace:
+    if trace:
         stopwatch.sw.trace()
-    elif FLAGS.profile:
+    elif profile:
         stopwatch.sw.enable()
 
-    map_inst = maps.get(FLAGS.map)
+    map_inst = maps.get(map_name)
 
     agent_classes = []
     players = []
 
-    agent_module, agent_name = FLAGS.agent.rsplit(".", 1)
+    agent_module, agent_name = agent.rsplit(".", 1)
     agent_cls = getattr(importlib.import_module(agent_module), agent_name)
     agent_classes.append(agent_cls)
-    players.append(
-        sc2_env.Agent(sc2_env.Race[FLAGS.agent_race], FLAGS.agent_name or agent_name)
-    )
+    players.append(sc2_env.Agent(sc2_env.Race[agent_race], agent_name or agent_name))
 
     if map_inst.players >= 2:
-        if FLAGS.agent2 == "Bot":
+        if agent2 == "Bot":
             players.append(
                 sc2_env.Bot(
-                    sc2_env.Race[FLAGS.agent2_race],
-                    sc2_env.Difficulty[FLAGS.difficulty],
-                    sc2_env.BotBuild[FLAGS.bot_build],
+                    sc2_env.Race[agent2_race],
+                    sc2_env.Difficulty[difficulty],
+                    sc2_env.BotBuild[bot_build],
                 )
             )
         else:
-            agent_module, agent_name = FLAGS.agent2.rsplit(".", 1)
+            agent_module, agent_name = agent2.rsplit(".", 1)
             agent_cls = getattr(importlib.import_module(agent_module), agent_name)
             agent_classes.append(agent_cls)
             players.append(
-                sc2_env.Agent(
-                    sc2_env.Race[FLAGS.agent2_race], FLAGS.agent2_name or agent_name
-                )
+                sc2_env.Agent(sc2_env.Race[agent2_race], agent2_name or agent_name)
             )
 
     threads = []
-    for _ in range(FLAGS.parallel - 1):
-        t = threading.Thread(
-            target=run_thread, args=(agent_classes, players, FLAGS.map, False)
-        )
+    thread_args = RunThreadArgs(
+        agent_classes=agent_classes,
+        players=players,
+        map_name=map_name,
+        visualize=False,
+        battle_net_map=battle_net_map,
+        feature_screen_size=feature_screen_size,
+        feature_minimap_size=feature_minimap_size,
+        rgb_screen_size=rgb_screen_size,
+        rgb_minimap_size=rgb_minimap_size,
+        action_space=action_space,
+        use_feature_units=use_feature_units,
+        use_raw_units=use_raw_units,
+        step_mul=step_mul,
+        game_steps_per_episode=game_steps_per_episode,
+        disable_fog=enable_fog,
+    )
+    for _ in range(parallel - 1):
+        t = threading.Thread(target=run_thread, args=thread_args)
         threads.append(t)
         t.start()
 
-    run_thread(agent_classes, players, FLAGS.map, FLAGS.render)
+    thread_args.visualize = render
+    run_thread(run_thread_args=thread_args)
 
     for t in threads:
         t.join()
 
-    if FLAGS.profile:
+    if profile:
         print(stopwatch.sw)
 
 
-def entry_point():  # Needed so setup.py scripts work.
-    app.run(main)
+@click.command(help="Runs an agent in StarCraft II environment.")
+@click.option(
+    "--render/--no_render",
+    help="Whether to render with pygame.",
+    type=bool,
+    default=True,
+    is_flag=True,
+)
+@click.option(
+    "--feature_screen_size",
+    help="Resolution for screen feature layers.",
+    type=int,
+    default=84,
+)
+@click.option(
+    "--feature_minimap_size",
+    help="Resolution for minimap feature layers.",
+    type=int,
+    default=64,
+)
+@click.option(
+    "--rgb_screen_size",
+    help="Resolution for rendered screen.",
+    type=str,
+    default="256,192",
+)
+@click.option(
+    "--rgb_minimap_size",
+    help="Resolution for rendered minimap.",
+    type=str,
+    default="128",
+)
+@click.option(
+    "--action_space",
+    help="Which action space to use.",
+    type=click.Choice(sc2_env.ActionSpace._member_names_),
+    default=None,
+)
+@click.option(
+    "--use_feature_units/--no_feature_units",
+    help="Whether to include feature units.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    "--use_raw_units/--no_raw_units",
+    help="Whether to include raw units.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    "--enable_fog/--disable_fog",
+    help="Whether to disable Fog of War.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    "--max_agent_steps",
+    help="Total agent steps.",
+    type=int,
+    default=0,
+)
+@click.option(
+    "--game_steps_per_episode",
+    help="Game steps per episode.",
+    type=int,
+    default=None,
+)
+@click.option(
+    "--max_episodes",
+    help="Total episodes.",
+    type=int,
+    default=0,
+)
+@click.option(
+    "--step_mul",
+    help="Game steps per agent step.",
+    type=int,
+    default=8,
+)
+@click.option(
+    "--agent",
+    help="Which agent to run, as a python path to an Agent class.",
+    type=str,
+    default="pysc2_evolved.agents.random_agent.RandomAgent",
+)
+@click.option(
+    "--agent_name",
+    help="Name of the agent in replays. Defaults to the class name.",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--agent_race",
+    help="Agent 1's race.",
+    type=click.Choice(sc2_env.Race._member_names_),
+    default="random",
+)
+@click.option(
+    "--agent2",
+    help="Second agent, either Bot or agent class.",
+    type=str,
+    default="Bot",
+)
+@click.option(
+    "--agent2_name",
+    help="Name of the agent in replays. Defaults to the class name.",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--agent2_race",
+    help="Agent 2's race.",
+    type=click.Choice(sc2_env.Race._member_names_),
+    default="random",
+)
+@click.option(
+    "--difficulty",
+    help="If agent2 is a built-in Bot, it's strength.",
+    type=click.Choice(sc2_env.Difficulty._member_names_),
+    default="very_easy",
+)
+@click.option(
+    "--bot_build",
+    help="Bot's build strategy.",
+    type=click.Choice(sc2_env.BotBuild._member_names_),
+    default="random",
+)
+@click.option(
+    "--profile/--no_profile",
+    help="Whether to turn on code profiling.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    "--trace/--no_trace",
+    help="Whether to trace the code execution.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    "--parallel",
+    help="How many instances to run in parallel.",
+    type=int,
+    default=1,
+)
+@click.option(
+    "--save_replay/--no_save_replay",
+    help="Whether to save a replay at the end.",
+    type=bool,
+    default=True,
+    is_flag=True,
+)
+@click.option(
+    "--map_name",
+    help="Name of a map to use.",
+    type=str,
+    required=True,
+    default=None,
+)
+@click.option(
+    "--battle_net_map/--no_battle_net_map",
+    help="Use the battle.net map version.",
+    type=bool,
+    default=False,
+    is_flag=True,
+)
+def main(
+    render: bool,
+    feature_screen_size: int,
+    feature_minimap_size: int,
+    rgb_screen_size: str,
+    rgb_minimap_size: str,
+    action_space: str,
+    use_feature_units: bool,
+    use_raw_units: bool,
+    enable_fog: bool,
+    max_agent_steps: int,
+    game_steps_per_episode: int,
+    max_episodes: int,
+    step_mul: int,
+    agent: str,
+    agent_name: str,
+    agent_race: str,
+    agent2: str,
+    agent2_name: str,
+    agent2_race: str,
+    difficulty: str,
+    bot_build: str,
+    profile: bool,
+    trace: bool,
+    parallel: int,
+    save_replay: bool,
+    map_name: str,
+    battle_net_map: bool,
+):
+    run_agent(
+        render=render,
+        feature_screen_size=feature_screen_size,
+        feature_minimap_size=feature_minimap_size,
+        rgb_screen_size=rgb_screen_size,
+        rgb_minimap_size=rgb_minimap_size,
+        action_space=action_space,
+        use_feature_units=use_feature_units,
+        use_raw_units=use_raw_units,
+        enable_fog=enable_fog,
+        max_agent_steps=max_agent_steps,
+        game_steps_per_episode=game_steps_per_episode,
+        max_episodes=max_episodes,
+        step_mul=step_mul,
+        agent=agent,
+        agent_name=agent_name,
+        agent_race=agent_race,
+        agent2=agent2,
+        agent2_name=agent2_name,
+        agent2_race=agent2_race,
+        difficulty=difficulty,
+        bot_build=bot_build,
+        profile=profile,
+        trace=trace,
+        parallel=parallel,
+        save_replay=save_replay,
+        map_name=map_name,
+        battle_net_map=battle_net_map,
+    )
 
 
 if __name__ == "__main__":
-    app.run(main)
+    main()

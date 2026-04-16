@@ -27,7 +27,7 @@ namespace pysc2_evolved {
 
 absl::Status GetBinaryProto(absl::string_view filename,
                             google::protobuf::MessageLite* proto) {
-  std::ifstream file((std::string(filename)));
+  std::ifstream file((std::string(filename)), std::ios::binary);
   if (!file) {
     return absl::NotFoundError(filename);
   }

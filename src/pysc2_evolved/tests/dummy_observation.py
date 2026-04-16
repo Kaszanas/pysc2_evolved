@@ -20,11 +20,10 @@ This can then e.g. be passed to features.transform_obs.
 import math
 
 import numpy as np
-from pysc2_evolved.lib import features
-
-from s2clientprotocol import raw_pb2
+from s2clientprotocol import raw_pb2, score_pb2
 from s2clientprotocol import sc2api_pb2 as sc_pb
-from s2clientprotocol import score_pb2
+
+from pysc2_evolved.lib import features
 
 
 class Unit(object):

@@ -27,37 +27,44 @@ import struct
 import subprocess
 import threading
 import time
+from typing import Any, Sequence, Tuple
 
 from absl import logging
+from s2clientprotocol import sc2api_pb2 as sc_pb
+
 from pysc2_evolved import run_configs
 from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import run_parallel
+from pysc2_evolved.lib import features, run_parallel
 
-from s2clientprotocol import sc2api_pb2 as sc_pb
+InterfaceOptions = sc_pb.InterfaceOptions
+AgentInterfaceFormat = features.AgentInterfaceFormat
+Race = sc2_env.Race
 
 
 class Addr(collections.namedtuple("Addr", ["ip", "port"])):
-    def __str__(self):
-        ip = "[%s]" % self.ip if ":" in self.ip else self.ip
-        return "%s:%s" % (ip, self.port)
+    ip: str
+    port: int
+
+    def __str__(self) -> str:
+        ip = f"[{self.ip}]" if ":" in self.ip else self.ip
+        return f"{ip}:{self.port}"
 
 
-def daemon_thread(target, args):
+def daemon_thread(target: Any, args: tuple) -> threading.Thread:
     t = threading.Thread(target=target, args=args)
     t.daemon = True
     t.start()
     return t
 
 
-def udp_server(addr):
+def udp_server(addr: Addr) -> socket.socket:
     family = socket.AF_INET6 if ":" in addr.ip else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.bind(addr)
     return sock
 
 
-def tcp_server(tcp_addr, settings):
+def tcp_server(tcp_addr: Addr, settings: dict[str, Any]) -> socket.socket:
     """Start up the tcp server, send the settings."""
     family = socket.AF_INET6 if ":" in tcp_addr.ip else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -75,7 +82,7 @@ def tcp_server(tcp_addr, settings):
     return conn
 
 
-def tcp_client(tcp_addr):
+def tcp_client(tcp_addr: Addr) -> Tuple[socket.socket, dict[str, Any]]:
     """Connect to the tcp server, and return the settings."""
     family = socket.AF_INET6 if ":" in tcp_addr.ip else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -101,17 +108,16 @@ def tcp_client(tcp_addr):
     return sock, settings
 
 
-def log_msg(prefix, msg):
-    logging.debug(
-        "%s: len: %s, hash: %s, msg: 0x%s",
-        prefix,
-        len(msg),
-        hashlib.md5(msg).hexdigest()[:6],
-        binascii.hexlify(msg[:25]),
-    )
+def log_msg(prefix: str, msg: bytes) -> None:
+    hash_str = hashlib.md5(msg).hexdigest()[:6]
+    msg_hex = binascii.hexlify(msg[:25]).decode()
+    logging.debug(f"{prefix}: len: {len(msg)}, hash: {hash_str}, msg: {msg_hex}")
 
 
-def udp_to_tcp(udp_sock, tcp_conn):
+def udp_to_tcp(
+    udp_sock: socket.socket,
+    tcp_conn: socket.socket,
+) -> None:
     while True:
         msg, _ = udp_sock.recvfrom(2**16)
         log_msg("read_udp", msg)
@@ -120,47 +126,59 @@ def udp_to_tcp(udp_sock, tcp_conn):
         write_tcp(tcp_conn, msg)
 
 
-def tcp_to_udp(tcp_conn, udp_sock, udp_to_addr):
+def tcp_to_udp(
+    tcp_conn: socket.socket,
+    udp_sock: socket.socket,
+    udp_to_addr: Addr,
+) -> None:
     while True:
-        msg = read_tcp(tcp_conn)
+        msg = read_tcp(conn=tcp_conn)
         if not msg:
             return
         log_msg("write_udp", msg)
-        udp_sock.sendto(msg, udp_to_addr)
+        udp_sock.sendto(data=msg, address=udp_to_addr)
 
 
-def read_tcp(conn):
-    read_size = read_tcp_size(conn, 4)
+def read_tcp(conn: socket.socket) -> bytes | None:
+    read_size = read_tcp_size(conn=conn, size=4)
     if not read_size:
-        return
+        return None
     size = struct.unpack("@I", read_size)[0]
-    msg = read_tcp_size(conn, size)
+    msg = read_tcp_size(conn=conn, size=size)
     log_msg("read_tcp", msg)
     return msg
 
 
-def read_tcp_size(conn, size):
+def read_tcp_size(conn: socket.socket, size: int) -> bytes | None:
     """Read `size` number of bytes from `conn`, retrying as needed."""
-    chunks = []
+    chunks: list[bytes] = []
     bytes_read = 0
     while bytes_read < size:
         chunk = conn.recv(size - bytes_read)
         if not chunk:
             if bytes_read > 0:
                 logging.warning("Incomplete read: %s of %s.", bytes_read, size)
-            return
+            return None
         chunks.append(chunk)
         bytes_read += len(chunk)
-    return b"".join(chunks)
+
+    return_string = b"".join(chunks)
+
+    return return_string
 
 
-def write_tcp(conn, msg):
+def write_tcp(conn: socket.socket, msg: bytes) -> None:
     log_msg("write_tcp", msg)
-    conn.sendall(struct.pack("@I", len(msg)))
-    conn.sendall(msg)
+    conn.sendall(data=struct.pack("@I", len(msg)))
+    conn.sendall(data=msg)
 
 
-def forward_ports(remote_host, local_host, local_listen_ports, remote_listen_ports):
+def forward_ports(
+    remote_host: str,
+    local_host: str,
+    local_listen_ports: Sequence[int],
+    remote_listen_ports: Sequence[int],
+) -> subprocess.Popen:
     """Forwards ports such that multiplayer works between machines.
 
     Args:
@@ -184,16 +202,16 @@ def forward_ports(remote_host, local_host, local_listen_ports, remote_listen_por
 
     args = [ssh, remote_host]
     for local_port in local_listen_ports:
-        args += ["-L", "%s:%s:%s:%s" % (local_host, local_port, local_host, local_port)]
+        addr_str = f"{local_host}:{local_port}:{local_host}:{local_port}"
+        args += ["-L", addr_str]
     for remote_port in remote_listen_ports:
-        args += [
-            "-R",
-            "%s:%s:%s:%s" % (local_host, remote_port, local_host, remote_port),
-        ]
+        addr_str = f"{local_host}:{remote_port}:{local_host}:{remote_port}"
+
+        args += ["-R", addr_str]
 
     logging.info("SSH port forwarding: %s", " ".join(args))
     return subprocess.Popen(
-        args,
+        args=args,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
@@ -215,18 +233,18 @@ class LanSC2Env(sc2_env.SC2Env):
     def __init__(
         self,
         *,
-        host="127.0.0.1",
-        config_port=None,
-        race=None,
-        name="<unknown>",
-        agent_interface_format=None,
-        discount=1.0,
-        visualize=False,
-        step_mul=None,
-        realtime=False,
-        replay_dir=None,
-        replay_prefix=None,
-    ):
+        host: str = "127.0.0.1",
+        config_port: int | None = None,
+        race: Race | None = None,
+        name: str = "<unknown>",
+        agent_interface_format: AgentInterfaceFormat | None = None,
+        discount: float = 1.0,
+        visualize: bool = False,
+        step_mul: int | None = None,
+        realtime: bool = False,
+        replay_dir: str | None = None,
+        replay_prefix: str | None = None,
+    ) -> None:
         """Create a SC2 Env that connects to a remote instance of the game.
 
         This assumes that the game is already up and running, and it only needs to
@@ -310,8 +328,14 @@ class LanSC2Env(sc2_env.SC2Env):
         self._finalize(visualize)
 
     def _launch_remote(
-        self, host, config_port, race, name, interface, agent_interface_format
-    ):
+        self,
+        host: str,
+        config_port: int | None,
+        race: Race,
+        name: str,
+        interface: InterfaceOptions,
+        agent_interface_format: AgentInterfaceFormat,
+    ) -> None:
         """Make sure this stays synced with bin/play_vs_agent.py."""
         self._tcp_conn, settings = tcp_client(Addr(host, config_port))
 
@@ -372,12 +396,12 @@ class LanSC2Env(sc2_env.SC2Env):
             )
         ]
 
-    def _restart(self):
+    def _restart(self) -> None:
         # Can't restart since it's not clear how you'd coordinate that with the
         # other players.
         raise RestartError("Can't restart")
 
-    def close(self):
+    def close(self) -> None:
         if hasattr(self, "_tcp_conn") and self._tcp_conn:
             self._tcp_conn.close()
             self._tcp_conn = None

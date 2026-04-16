@@ -17,17 +17,17 @@
 import collections
 import sys
 
-from absl import app
-from absl import flags
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import image_differencer
-from pysc2_evolved.lib import proto_diff
-from pysc2_evolved.lib import remote_controller
-from pysc2_evolved.lib import replay
-from pysc2_evolved.lib import stopwatch
-
+from absl import app, flags
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+from pysc2_evolved import run_configs
+from pysc2_evolved.lib import (
+    image_differencer,
+    proto_diff,
+    remote_controller,
+    replay,
+    stopwatch,
+)
 
 FLAGS = flags.FLAGS
 

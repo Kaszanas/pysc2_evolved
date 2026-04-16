@@ -14,26 +14,25 @@
 # limitations under the License.
 """Tests for image_differencer.py."""
 
-from absl.testing import absltest
 import numpy as np
-from pysc2_evolved.lib import image_differencer
-from pysc2_evolved.lib import proto_diff
-
-from s2clientprotocol import common_pb2
+import pytest
+from s2clientprotocol import common_pb2, spatial_pb2
 from s2clientprotocol import sc2api_pb2 as sc_pb
-from s2clientprotocol import spatial_pb2
+
+from pysc2_evolved.lib import image_differencer, proto_diff
 
 
-class ImageDifferencerTest(absltest.TestCase):
-    def testFilteredOut(self):
+@pytest.mark.minor
+class TestImageDifferencer:
+    def test_filtered_out(self):
         result = image_differencer.image_differencer(
             path=proto_diff.ProtoPath(("observation", "actions", 1)),
             proto_a=None,
             proto_b=None,
         )
-        self.assertIsNone(result)
+        assert result is None
 
-    def testFilteredIn(self):
+    def test_filtered_in(self):
         a = sc_pb.ResponseObservation(
             observation=sc_pb.Observation(
                 feature_layer_data=spatial_pb2.ObservationFeatureLayer(
@@ -85,11 +84,7 @@ class ImageDifferencerTest(absltest.TestCase):
             proto_b=b,
         )
 
-        self.assertEqual(
-            result,
-            "3 element(s) changed - [1][0]: 1 -> 0; [1][1]: 0 -> 1; [3][3]: 1 -> 0",
+        assert (
+            result
+            == "3 element(s) changed - [1][0]: 1 -> 0; [1][1]: 0 -> 1; [3][3]: 1 -> 0"
         )
-
-
-if __name__ == "__main__":
-    absltest.main()

@@ -1,5 +1,5 @@
 load("@my_deps//:requirements.bzl", "requirement")
-load("//pysc2_evolved:build_defs.bzl", "pytype_library", "pytype_strict_library")
+load("//src/pysc2_evolved:build_defs.bzl", "pytype_library", "pytype_strict_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -20,7 +20,7 @@ pytype_library(
     srcs = ["base_agent.py"],
     srcs_version = "PY3",
     deps = [
-        "//pysc2_evolved/lib:actions",
+        "//src/pysc2_evolved/lib:actions",
     ],
 )
 
@@ -40,8 +40,8 @@ pytype_library(
     deps = [
         ":base_agent",
         requirement("numpy"),
-        "//pysc2_evolved/lib:actions",
-        "//pysc2_evolved/lib:features",
+        "//src/pysc2_evolved/lib:actions",
+        "//src/pysc2_evolved/lib:features",
     ],
 )
 
@@ -52,6 +52,6 @@ pytype_library(
     deps = [
         ":base_agent",
         requirement("numpy"),
-        "//pysc2_evolved/lib:actions",
+        "//src/pysc2_evolved/lib:actions",
     ],
 )

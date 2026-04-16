@@ -18,15 +18,15 @@ import json
 import types
 
 import mpyq
-from s2protocol import versions as s2versions
 import tree
+from s2protocol import versions as s2versions
 
 
 def _convert_to_str(s):
     if isinstance(s, bytes):
-        return bytes.decode(s)
-    else:
-        return s
+        decoded_bytes = bytes.decode(s, encoding="utf-8", errors="ignore")
+        return decoded_bytes
+    return s
 
 
 def _convert_all_to_str(structure):
@@ -39,7 +39,7 @@ def _convert_all_to_str(structure):
 class SC2Replay(object):
     """Helper class for loading and extracting data using s2protocol library."""
 
-    def __init__(self, replay_data):
+    def __init__(self, replay_data: bytes):
         """Construct SC2Replay helper for extracting data from a replay."""
         (self._header, self._metadata, self._extracted, self._protocol) = _extract(
             replay_data
@@ -55,9 +55,12 @@ class SC2Replay(object):
         )
 
     def init_data(self):
-        return _convert_all_to_str(
-            self._protocol.decode_replay_initdata(self._extracted[b"replay.initData"])
-        )
+        extracted = self._extracted[b"replay.initData"]
+        decoded = self._protocol.decode_replay_initdata(extracted)
+
+        string = _convert_all_to_str(structure=decoded)
+
+        return string
 
     def tracker_events(self, filter_fn=None):
         """Yield tracker events from the replay in s2protocol format."""
@@ -115,11 +118,15 @@ def _extract(contents):
     replay_io.seek(0)
     archive = mpyq.MPQArchive(replay_io)
     extracted = archive.extract()
-    metadata = json.loads(bytes.decode(extracted[b"replay.gamemetadata.json"], "utf-8"))
+
+    replay_game_metadata = extracted[b"replay.gamemetadata.json"]
+    decoded_replay_game_metadata = bytes.decode(replay_game_metadata, encoding="utf-8")
+
+    metadata_loaded_from_json = json.loads(decoded_replay_game_metadata)
     contents = archive.header["user_data_header"]["content"]
     header = s2versions.latest().decode_replay_header(contents)
     base_build = header["m_version"]["m_baseBuild"]
     protocol = s2versions.build(base_build)
     if protocol is None:
         raise ValueError("Could not load protocol {} for replay".format(base_build))
-    return header, metadata, extracted, protocol
+    return header, metadata_loaded_from_json, extracted, protocol

@@ -13,17 +13,15 @@
 # limitations under the License.
 """A Starcraft II environment for playing using remote SC2 instances."""
 
-from typing import Sequence
+from typing import List, Sequence
 
 from absl import logging
-from pysc2_evolved import maps
-from pysc2_evolved import run_configs
-from pysc2_evolved.env import sc2_env
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import remote_controller
-from pysc2_evolved.lib import run_parallel
-
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import maps, run_configs
+from pysc2_evolved.env import sc2_env
+from pysc2_evolved.lib import features, remote_controller, run_parallel
+from pysc2_evolved.lib.features import AgentInterfaceFormat
 
 
 class RestartError(Exception):
@@ -41,22 +39,22 @@ class RemoteSC2Env(sc2_env.SC2Env):
 
     def __init__(
         self,
-        *,
-        map_name=None,
-        save_map=True,
-        host="127.0.0.1",
-        host_port=None,
-        lan_port=None,
-        race=None,
-        name="<unknown>",
-        agent_interface_format=None,
-        discount=1.0,
-        visualize=False,
-        step_mul=None,
-        realtime=False,
-        replay_dir=None,
-        replay_prefix=None,
-    ):
+        *,  # Force keyword arguments
+        map_name: str | None = None,
+        save_map: bool = True,
+        host: str = "127.0.0.1",
+        host_port: int | None = None,
+        lan_port: int | Sequence[int] | None = None,
+        race: sc2_env.Race | None = None,
+        name: str = "<unknown>",
+        agent_interface_format: AgentInterfaceFormat | None = None,
+        discount: float = 1.0,
+        visualize: bool = False,
+        step_mul: int | None = None,
+        realtime: bool = False,
+        replay_dir: str | None = None,
+        replay_prefix: str | None = None,
+    ) -> None:
         """Create a SC2 Env that connects to a remote instance of the game.
 
         This assumes that the game is already up and running, and that it only
@@ -140,7 +138,8 @@ class RemoteSC2Env(sc2_env.SC2Env):
         self._action_delay_fns = [None]
 
         interface = self._get_interface(
-            agent_interface_format=agent_interface_format, require_raw=visualize
+            agent_interface_format=agent_interface_format,
+            require_raw=visualize,
         )
 
         if isinstance(lan_port, Sequence):
@@ -151,20 +150,20 @@ class RemoteSC2Env(sc2_env.SC2Env):
             ports = [lan_port + p for p in range(4)]  # 2 * num players *in the game*.
 
         self._connect_remote(
-            host,
-            host_port,
-            ports,
-            race,
-            name,
-            map_inst,
-            save_map,
-            interface,
-            agent_interface_format,
+            host=host,
+            host_port=host_port,
+            lan_ports=ports,
+            race=race,
+            name=name,
+            map_inst=map_inst,
+            save_map=save_map,
+            interface=interface,
+            agent_interface_format=agent_interface_format,
         )
 
         self._finalize(visualize)
 
-    def close(self):
+    def close(self) -> None:
         # Leave the game so that another may be created in the same SC2 process.
         if self._in_game:
             logging.info("Leaving game.")
@@ -184,16 +183,16 @@ class RemoteSC2Env(sc2_env.SC2Env):
 
     def _connect_remote(
         self,
-        host,
-        host_port,
-        lan_ports,
-        race,
-        name,
-        map_inst,
-        save_map,
-        interface,
-        agent_interface_format,
-    ):
+        host: str,
+        host_port: int | None,
+        lan_ports: List[int],
+        race: sc2_env.Race,
+        name: str,
+        map_inst: maps.Map | None,
+        save_map: bool,
+        interface: sc_pb.InterfaceOptions,
+        agent_interface_format: AgentInterfaceFormat,
+    ) -> None:
         """Make sure this stays synced with bin/agent_remote.py."""
         # Connect!
         logging.info("Connecting...")
@@ -231,7 +230,7 @@ class RemoteSC2Env(sc2_env.SC2Env):
         self._in_game = True
         logging.info("Game joined.")
 
-    def _restart(self):
+    def _restart(self) -> None:
         # Can't restart since it's not clear how you'd coordinate that with the
         # other players.
         raise RestartError("Can't restart")

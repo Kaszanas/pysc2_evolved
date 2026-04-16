@@ -2,3 +2,16 @@
 *_pb2.py
 
 data/
+bazel-*
+
+*.SC2Replay
+versions_new.txt
+versions.txt
+
+bazel/google/
+
+CLAUDE.md
+
+*.pyd
+*.so
+

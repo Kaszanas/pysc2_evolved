@@ -14,16 +14,11 @@
 # limitations under the License.
 """Benchmark observation times."""
 
-from absl import app
-from absl import flags
-from pysc2_evolved import run_configs
-from pysc2_evolved.lib import actions
-from pysc2_evolved.lib import features
-from pysc2_evolved.lib import point_flag
-from pysc2_evolved.lib import replay
-from pysc2_evolved.lib import stopwatch
-
+from absl import app, flags
 from s2clientprotocol import sc2api_pb2 as sc_pb
+
+from pysc2_evolved import run_configs
+from pysc2_evolved.lib import actions, features, point_flag, replay, stopwatch
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("step_mul", 8, "Game steps per observation.")

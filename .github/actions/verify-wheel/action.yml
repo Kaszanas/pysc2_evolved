@@ -1,0 +1,38 @@
+name: Verify wheel
+description: >
+    Download a wheel artifact, install it with pip, and run a functional
+    smoke test to confirm the pybind11 native extensions are present and
+    execute C++ code correctly.
+
+inputs:
+    artifact-name:
+        description: Name of the wheel artifact to download and install
+        required: true
+    python-version:
+        description: Python version to use — must match the version the wheel was compiled for
+        required: false
+        default: "3.11"
+
+runs:
+    using: composite
+    steps:
+        - name: Install uv and Python
+          uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82
+          with:
+              python-version: ${{ inputs.python-version }}
+
+        - name: Download wheel
+          uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+          with:
+              name: ${{ inputs.artifact-name }}
+              path: dist
+
+        - name: Create isolated virtual environment
+          shell: bash
+          run: uv venv .venv --python ${{ inputs.python-version }}
+
+        - name: Install and verify wheel
+          shell: bash
+          run: make verify_wheel_local
+          env:
+              VIRTUAL_ENV: ${{ github.workspace }}/.venv

@@ -16,6 +16,7 @@
 
 import io
 import json
+
 import mpyq
 
 from pysc2_evolved.run_configs import lib as run_configs_lib
@@ -27,9 +28,12 @@ def get_replay_version(replay_data):
     replay_io.seek(0)
     archive = mpyq.MPQArchive(replay_io).extract()
     metadata = json.loads(archive[b"replay.gamemetadata.json"].decode("utf-8"))
-    return run_configs_lib.Version(
+
+    version = run_configs_lib.Version(
         game_version=".".join(metadata["GameVersion"].split(".")[:-1]),
         build_version=int(metadata["BaseBuild"][4:]),
         data_version=metadata.get("DataVersion"),  # Only in replays version 4.1+.
         binary=None,
     )
+
+    return version
