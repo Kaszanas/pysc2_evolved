@@ -271,11 +271,19 @@ jobs:
             - name: Check-out repository
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
+            - name: Read package version
+              id: pkg-version
+              shell: bash
+              run: |
+                  VER=$(grep -m1 '^version' pyproject.toml | sed 's/.*= *"\(.*\)"/\1/')
+                  echo "version=${VER}" >> "$GITHUB_OUTPUT"
+
             - name: Install and smoke test
               uses: ./.github/actions/smoke-test-converter
               with:
                   python-version: ${{ matrix.python-version }}
                   package-name: ${{ matrix.pkg }}
+                  package-version: ${{ steps.pkg-version.outputs.version }}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Attach all built artifacts to the GitHub Release.

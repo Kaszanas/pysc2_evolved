@@ -36,7 +36,7 @@ runs:
               python-version: ${{ inputs.python-version }}
 
         - name: Wait for index propagation
-          if: ${{ inputs.index-url != '' }}
+          if: ${{ inputs.package-version != '' }}
           shell: bash
           run: sleep 10
 
@@ -56,7 +56,12 @@ runs:
         - name: Install package (PyPI)
           if: ${{ inputs.index-url == '' }}
           shell: bash
-          run: pip install ${{ inputs.package-name }}
+          run: |
+              PKG="${{ inputs.package-name }}"
+              if [ -n "${{ inputs.package-version }}" ]; then
+                PKG="${PKG}==${{ inputs.package-version }}"
+              fi
+              pip install "${PKG}"
 
         - name: Verify pybind11 extensions work
           shell: bash
