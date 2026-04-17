@@ -276,7 +276,7 @@ class ReplayProcessor(multiprocessing.Process):
                                 if info.local_map_path:
                                     self._update_stage("open map file")
                                     map_data = self.run_config.map_data(
-                                        info.local_map_path
+                                        map_name=info.local_map_path
                                     )
                                 for player_id in [1, 2]:
                                     self._print(
@@ -284,7 +284,10 @@ class ReplayProcessor(multiprocessing.Process):
                                         % (replay_name, player_id)
                                     )
                                     self.process_replay(
-                                        controller, replay_data, map_data, player_id
+                                        controller=controller,
+                                        replay_data=replay_data,
+                                        map_data=map_data,
+                                        player_id=player_id,
                                     )
                             else:
                                 self._print("Replay is invalid.")
@@ -345,16 +348,16 @@ class ReplayProcessor(multiprocessing.Process):
             obs = controller.observe()
 
             for action in obs.actions:
-                act_fl = action.action_feature_layer
-                if act_fl.HasField("unit_command"):
+                action_feature_layer = action.action_feature_layer
+                if action_feature_layer.HasField("unit_command"):
                     self.stats.replay_stats.made_abilities[
-                        act_fl.unit_command.ability_id
+                        action_feature_layer.unit_command.ability_id
                     ] += 1
-                if act_fl.HasField("camera_move"):
+                if action_feature_layer.HasField("camera_move"):
                     self.stats.replay_stats.camera_move += 1
-                if act_fl.HasField("unit_selection_point"):
+                if action_feature_layer.HasField("unit_selection_point"):
                     self.stats.replay_stats.select_pt += 1
-                if act_fl.HasField("unit_selection_rect"):
+                if action_feature_layer.HasField("unit_selection_rect"):
                     self.stats.replay_stats.select_rect += 1
                 if action.action_ui.HasField("control_group"):
                     self.stats.replay_stats.control_group += 1
@@ -529,7 +532,12 @@ class LogLevel(str, enum.Enum):
 @click.command(help="")
 @click.option(
     "--replays",
-    type=click.Path(exists=True, file_okay=False, resolve_path=True, path_type=Path),
+    type=click.Path(
+        exists=True,
+        file_okay=False,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help="Path to a directory of replays.",
 )
 @click.option(
