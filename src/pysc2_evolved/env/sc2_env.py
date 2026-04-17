@@ -342,15 +342,16 @@ class SC2Env(environment.Base):
     def _launch_game(self):
         # Reserve a whole bunch of ports for the weird multiplayer implementation.
         if self._num_agents > 1:
-            self._ports = portspicker.pick_unused_ports(self._num_agents * 2)
-            logging.info("Ports used for multiplayer: %s", self._ports)
+            self._ports = portspicker.pick_unused_ports(num_ports=self._num_agents * 2)
+            logging.info(f"Ports used for multiplayer: {self._ports}")
         else:
             self._ports = []
 
         # Actually launch the game processes.
         self._sc2_procs = [
             self._run_config.start(
-                extra_ports=self._ports, want_rgb=interface.HasField("render")
+                extra_ports=self._ports,
+                want_rgb=interface.HasField("render"),
             )
             for interface in self._interface_options
         ]
@@ -834,7 +835,7 @@ class SC2Env(environment.Base):
             self._sc2_procs = None
 
         if hasattr(self, "_ports") and self._ports:
-            portspicker.return_ports(self._ports)
+            portspicker.return_ports(ports=self._ports)
             self._ports = None
 
         if hasattr(self, "_parallel") and self._parallel is not None:
