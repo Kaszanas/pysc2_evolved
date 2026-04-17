@@ -283,21 +283,19 @@ def _to_point(dims: int | tuple[int, int]) -> point.Point:
     if isinstance(dims, (tuple, list)):
         if len(dims) != 2:
             raise ValueError(
-                "A two element tuple or list is expected here, got {}.".format(dims)
+                f"A two element tuple or list is expected here, got {dims}."
             )
-        else:
-            width = int(dims[0])
-            height = int(dims[1])
-            if width <= 0 or height <= 0:
-                raise ValueError("Must specify +ve dims, got {}.".format(dims))
-            else:
-                return point.Point(width, height)
-    else:
-        size = int(dims)
-        if size <= 0:
-            raise ValueError("Must specify a +ve value for size, got {}.".format(dims))
-        else:
-            return point.Point(size, size)
+        width = int(dims[0])
+        height = int(dims[1])
+        if width <= 0 or height <= 0:
+            raise ValueError(f"Must specify +ve dims, got {dims}.")
+        return point.Point(width, height)
+
+    size = int(dims)
+    if size <= 0:
+        raise ValueError(f"Must specify a +ve value for size, got {dims}.")
+
+    return point.Point(size, size)
 
 
 class Dimensions(object):
