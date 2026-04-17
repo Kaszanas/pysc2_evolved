@@ -314,6 +314,10 @@ class Dimensions(object):
         screen: int | tuple[int, int],
         minimap: int | tuple[int, int],
     ):
+        if not screen or not minimap:
+            raise ValueError(
+                f"Both screen and minimap dimensions must be specified, got screen={screen}, minimap={minimap}."
+            )
         self._screen = _to_point(dims=screen)
         self._minimap = _to_point(dims=minimap)
 
