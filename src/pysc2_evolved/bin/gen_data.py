@@ -16,6 +16,7 @@
 
 import collections
 
+import click
 from absl import app
 from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
@@ -29,9 +30,12 @@ def get_data():
     run_config = run_configs.get()
 
     with run_config.start(want_rgb=False) as controller:
-        m = maps.get("Sequencer")  # Arbitrary ladder map.
+        sc2_map = maps.get("Sequencer")  # Arbitrary ladder map.
         create = sc_pb.RequestCreateGame(
-            local_map=sc_pb.LocalMap(map_path=m.path, map_data=m.data(run_config))
+            local_map=sc_pb.LocalMap(
+                map_path=sc2_map.path,
+                map_data=sc2_map.data(run_config),
+            )
         )
         create.player_setup.add(type=sc_pb.Participant)
         create.player_setup.add(
@@ -43,10 +47,13 @@ def get_data():
 
         controller.create_game(create)
         controller.join_game(join)
-        return controller.data_raw()
+
+        static_data = controller.data_raw()
+
+        return static_data
 
 
-def generate_py_units(data):
+def generate_py_units(data: sc_pb.ResponseData) -> None:
     """Generate the list of units in units.py."""
     units = collections.defaultdict(list)
     for unit in sorted(data.units, key=lambda a: a.name):
@@ -67,7 +74,7 @@ def generate_py_units(data):
     print_race("Zerg", sc_common.Zerg)
 
 
-def generate_py_buffs(data):
+def generate_py_buffs(data: sc_pb.ResponseData) -> None:
     """Generate the list of buffs in buffs.py."""
     print(" buffs.py ".center(60, "-"))
     print("class Buffs(enum.IntEnum):")
@@ -78,7 +85,7 @@ def generate_py_buffs(data):
     print("\n")
 
 
-def generate_py_upgrades(data):
+def generate_py_upgrades(data: sc_pb.ResponseData) -> None:
     """Generate the list of upgrades in upgrades.py."""
     print(" upgrades.py ".center(60, "-"))
     print("class Upgrades(enum.IntEnum):")
@@ -89,7 +96,8 @@ def generate_py_upgrades(data):
     print("\n")
 
 
-def main(unused_argv):
+@click.command()
+def main():
     data = get_data()
     generate_py_units(data)
     generate_py_buffs(data)
