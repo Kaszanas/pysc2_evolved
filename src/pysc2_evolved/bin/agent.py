@@ -48,6 +48,10 @@ class RunThreadArgs:
     game_steps_per_episode: int
     disable_fog: bool
 
+    max_agent_steps: int
+    max_episodes: int
+    save_replay: bool
+
 
 def run_thread(run_thread_args: RunThreadArgs):
     """Run one thread worth of the environment with agents."""
@@ -110,13 +114,73 @@ def run_agent(
     map_name: str,
     battle_net_map: bool,
 ):
-    """Run an agent."""
+    """
+    Runs an agent in the StarCraft II environment, with the given configuration.
+
+    Parameters
+    ----------
+    render : bool
+        Whether to render with pygame.
+    feature_screen_size : int
+        Resolution for screen feature layers.
+    feature_minimap_size : int
+        Resolution for minimap feature layers.
+    rgb_screen_size : tuple[int, int] | int
+        Resolution for rendered screen, as "width,height" or size.
+    rgb_minimap_size : tuple[int, int] | int
+        Resolution for rendered minimap, as "width,height" or size.
+    action_space : str
+        Which action space to use.
+    use_feature_units : bool
+        _description_
+    use_raw_units : bool
+        _description_
+    enable_fog : bool
+        _description_
+    max_agent_steps : int
+        _description_
+    game_steps_per_episode : int
+        _description_
+    max_episodes : int
+        _description_
+    step_mul : int
+        _description_
+    agent : str
+        _description_
+    agent_name : str
+        Name of the agent in replays. Defaults to the class name.
+    agent_race : str
+        Race of the first agent.
+    agent2 : str
+        _description_
+    agent2_name : str
+        _description_
+    agent2_race : str
+        _description_
+    difficulty : str
+        _description_
+    bot_build : str
+        _description_
+    profile : bool
+        _description_
+    trace : bool
+        _description_
+    parallel : int
+        _description_
+    save_replay : bool
+        _description_
+    map_name : str
+        _description_
+    battle_net_map : bool
+        _description_
+    """
+
     if trace:
         stopwatch.sw.trace()
     elif profile:
         stopwatch.sw.enable()
 
-    map_inst = maps.get(map_name)
+    map_inst = maps.get(map_name=map_name)
 
     agent_classes = []
     players = []
@@ -160,6 +224,9 @@ def run_agent(
         step_mul=step_mul,
         game_steps_per_episode=game_steps_per_episode,
         disable_fog=enable_fog,
+        max_agent_steps=max_agent_steps,
+        max_episodes=max_episodes,
+        save_replay=save_replay,
     )
     for _ in range(parallel - 1):
         t = threading.Thread(target=run_thread, args=thread_args)
@@ -200,13 +267,13 @@ def run_agent(
     "--rgb_screen_size",
     help="Resolution for rendered screen.",
     type=str,
-    default="256,192",
+    default=None,
 )
 @click.option(
     "--rgb_minimap_size",
     help="Resolution for rendered minimap.",
-    type=str,
-    default="128",
+    type=int,
+    default=None,
 )
 @click.option(
     "--action_space",
@@ -339,7 +406,6 @@ def run_agent(
     help="Name of a map to use.",
     type=str,
     required=True,
-    default=None,
 )
 @click.option(
     "--battle_net_map/--no_battle_net_map",
@@ -353,7 +419,7 @@ def main(
     feature_screen_size: int,
     feature_minimap_size: int,
     rgb_screen_size: str,
-    rgb_minimap_size: str,
+    rgb_minimap_size: int,
     action_space: str,
     use_feature_units: bool,
     use_raw_units: bool,
@@ -377,6 +443,12 @@ def main(
     map_name: str,
     battle_net_map: bool,
 ):
+    if isinstance(rgb_screen_size, str):
+        if "," in rgb_screen_size:
+            rgb_screen_size = tuple(map(int, rgb_screen_size.split(",")))
+        else:
+            rgb_screen_size = int(rgb_screen_size)
+
     run_agent(
         render=render,
         feature_screen_size=feature_screen_size,
