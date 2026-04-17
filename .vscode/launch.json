@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "args": ["--replay", "./data/test.SC2Replay", "--no_render"]
+      "args": ["--map_name", "Simple64"]
     }
   ]
 }
