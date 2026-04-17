@@ -276,28 +276,26 @@ MINIMAP_FEATURES = MinimapFeatures(
 )
 
 
-def _to_point(dims):
+def _to_point(dims: int | tuple[int, int]) -> point.Point:
     """Convert (width, height) or size -> point.Point."""
     assert dims
 
     if isinstance(dims, (tuple, list)):
         if len(dims) != 2:
             raise ValueError(
-                "A two element tuple or list is expected here, got {}.".format(dims)
+                f"A two element tuple or list is expected here, got {dims}."
             )
-        else:
-            width = int(dims[0])
-            height = int(dims[1])
-            if width <= 0 or height <= 0:
-                raise ValueError("Must specify +ve dims, got {}.".format(dims))
-            else:
-                return point.Point(width, height)
-    else:
-        size = int(dims)
-        if size <= 0:
-            raise ValueError("Must specify a +ve value for size, got {}.".format(dims))
-        else:
-            return point.Point(size, size)
+        width = int(dims[0])
+        height = int(dims[1])
+        if width <= 0 or height <= 0:
+            raise ValueError(f"Must specify +ve dims, got {dims}.")
+        return point.Point(width, height)
+
+    size = int(dims)
+    if size <= 0:
+        raise ValueError(f"Must specify a +ve value for size, got {dims}.")
+
+    return point.Point(size, size)
 
 
 class Dimensions(object):
@@ -311,16 +309,17 @@ class Dimensions(object):
       minimap: A (width, height) int tuple or a single int to be used for both.
     """
 
-    def __init__(self, screen=None, minimap=None):
+    def __init__(
+        self,
+        screen: int | tuple[int, int],
+        minimap: int | tuple[int, int],
+    ):
         if not screen or not minimap:
             raise ValueError(
-                "screen and minimap must both be set, screen={}, minimap={}".format(
-                    screen, minimap
-                )
+                f"Both screen and minimap dimensions must be specified, got screen={screen}, minimap={minimap}."
             )
-
-        self._screen = _to_point(screen)
-        self._minimap = _to_point(minimap)
+        self._screen = _to_point(dims=screen)
+        self._minimap = _to_point(dims=minimap)
 
     @property
     def screen(self):
@@ -713,10 +712,10 @@ class AgentInterfaceFormat(object):
 
 
 def parse_agent_interface_format(
-    feature_screen=None,
-    feature_minimap=None,
-    rgb_screen=None,
-    rgb_minimap=None,
+    feature_screen: int | tuple[int, int] | None = None,
+    feature_minimap: int | tuple[int, int] | None = None,
+    rgb_screen: int | tuple[int, int] | None = None,
+    rgb_minimap: int | tuple[int, int] | None = None,
     action_space: str | None = None,
     action_delays: list[int] | None = None,
     **kwargs,
@@ -752,12 +751,12 @@ def parse_agent_interface_format(
       ValueError: If an invalid parameter is specified.
     """
     if feature_screen or feature_minimap:
-        feature_dimensions = Dimensions(feature_screen, feature_minimap)
+        feature_dimensions = Dimensions(screen=feature_screen, minimap=feature_minimap)
     else:
         feature_dimensions = None
 
     if rgb_screen or rgb_minimap:
-        rgb_dimensions = Dimensions(rgb_screen, rgb_minimap)
+        rgb_dimensions = Dimensions(screen=rgb_screen, minimap=rgb_minimap)
     else:
         rgb_dimensions = None
 

@@ -27,7 +27,8 @@ from pysc2_evolved.run_configs import platforms as platforms
 
 
 def get(
-    version: lib.Version | str = None, sc2_run_config: lib.RunConfig | None = None
+    version: lib.Version | str = None,
+    sc2_run_config: lib.RunConfig | None = None,
 ) -> lib.RunConfig:
     """Get the config chosen by the flags."""
     configs: Dict[str, lib.RunConfig] = {

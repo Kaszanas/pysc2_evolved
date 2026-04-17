@@ -228,38 +228,39 @@ class TestAvailableActions:
 @pytest.mark.minor
 class TestToPoint:
     def test_int_as_string(self):
-        value = features._to_point("32")
+        value = features._to_point(dims="32")
         assert value == point.Point(32, 32)
 
     def test_int_string_two_tuple(self):
-        value = features._to_point(("32", 64))
+        value = features._to_point(dims=("32", 64))
         assert value == point.Point(32, 64)
 
     def test_none_input_raises(self):
         with pytest.raises(AssertionError):
-            features._to_point(None)
+            features._to_point(dims=None)
 
     def test_none_as_first_element_raises(self):
         with pytest.raises(TypeError):
-            features._to_point((None, 32))
+            features._to_point(dims=(None, 32))
 
     def test_none_as_second_element_raises(self):
         with pytest.raises(TypeError):
-            features._to_point((32, None))
+            features._to_point(dims=(32, None))
 
     def test_singleton_tuple_raises(self):
         with pytest.raises(ValueError):
-            features._to_point((32,))
+            features._to_point(dims=(32,))
 
     def test_three_tuple_raises(self):
         with pytest.raises(ValueError):
-            features._to_point((32, 32, 32))
+            features._to_point(dims=(32, 32, 32))
 
 
 @pytest.mark.minor
 class TestDimensions:
     def test_screen_size_without_minimap_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
+            # Dimensions must have both screen and minimap dimensions specified:
             features.Dimensions(screen=84)
 
     def test_screen_width_without_height_raises(self):
@@ -267,11 +268,13 @@ class TestDimensions:
             features.Dimensions(screen=(84, 0), minimap=64)
 
     def test_screen_width_height_without_minimap_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
+            # Dimensions must have both screen and minimap dimensions specified:
             features.Dimensions(screen=(84, 80))
 
     def test_minimap_width_and_height_without_screen_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
+            # Dimensions must have both screen and minimap dimensions specified:
             features.Dimensions(minimap=(64, 67))
 
     def test_none_none_raises(self):
@@ -326,30 +329,29 @@ class TestParseAgentInterfaceFormat:
         with pytest.raises(ValueError):
             features.parse_agent_interface_format()
 
-    @pytest.mark.parametrize(
-        "screen,minimap", [(32, None), (None, 32)]
-    )
+    @pytest.mark.parametrize("screen,minimap", [(32, None), (None, 32)])
     def test_invalid_feature_combinations_raise(self, screen, minimap):
         with pytest.raises(ValueError):
             features.parse_agent_interface_format(
-                feature_screen=screen, feature_minimap=minimap
+                feature_screen=screen,
+                feature_minimap=minimap,
             )
 
     def test_valid_feature_specification_is_parsed(self):
         agent_interface_format = features.parse_agent_interface_format(
-            feature_screen=32, feature_minimap=(24, 24)
+            feature_screen=32,
+            feature_minimap=(24, 24),
         )
 
         assert agent_interface_format.feature_dimensions.screen == point.Point(32, 32)
         assert agent_interface_format.feature_dimensions.minimap == point.Point(24, 24)
 
-    @pytest.mark.parametrize(
-        "screen,minimap", [(32, None), (None, 32), (32, 64)]
-    )
+    @pytest.mark.parametrize("screen,minimap", [(32, None), (None, 32), (32, 64)])
     def test_invalid_minimap_combinations_raise(self, screen, minimap):
         with pytest.raises(ValueError):
             features.parse_agent_interface_format(
-                rgb_screen=screen, rgb_minimap=minimap
+                rgb_screen=screen,
+                rgb_minimap=minimap,
             )
 
     def test_valid_minimap_specification_is_parsed(self):

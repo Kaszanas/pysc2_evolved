@@ -256,11 +256,11 @@ class RemoteController(object):
     @sw.decorate
     def data_raw(
         self,
-        ability_id=True,
-        unit_type_id=True,
-        upgrade_id=True,
-        buff_id=True,
-        effect_id=True,
+        ability_id: bool = True,
+        unit_type_id: bool = True,
+        upgrade_id: bool = True,
+        buff_id: bool = True,
+        effect_id: bool = True,
     ):
         """Get the raw static data for the current game. Prefer `data` instead."""
         return self._client.send(

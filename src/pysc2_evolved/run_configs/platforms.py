@@ -167,7 +167,10 @@ class Windows(LocalBase):
             or "C:/Program Files (x86)/StarCraft II"
         )
         super(Windows, self).__init__(
-            exec_path, "SC2_x64.exe", version=version, cwd="Support64"
+            base_dir=exec_path,
+            exec_name="SC2_x64.exe",
+            version=version,
+            cwd="Support64",
         )
 
     @classmethod

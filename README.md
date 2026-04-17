@@ -113,20 +113,20 @@ You can run an agent to test the environment. The UI shows you the actions of
 the agent and is helpful for debugging and visualization purposes.
 
 ```shell
-$ python -m pysc2_evolved.bin.agent --map Simple64
+$ python -m pysc2_evolved.bin.agent --map_name Simple64
 ```
 
 It runs a random agent by default, but you can specify others if you'd like,
 including your own.
 
 ```shell
-$ python -m pysc2_evolved.bin.agent --map CollectMineralShards --agent pysc2_evolved.agents.scripted_agent.CollectMineralShards
+$ python -m pysc2_evolved.bin.agent --map_name CollectMineralShards --agent pysc2_evolved.agents.scripted_agent.CollectMineralShards
 ```
 
 You can also run two agents against each other.
 
 ```shell
-$ python -m pysc2_evolved.bin.agent --map Simple64 --agent2 pysc2_evolved.agents.random_agent.RandomAgent
+$ python -m pysc2_evolved.bin.agent --map_name Simple64 --agent2 pysc2_evolved.agents.random_agent.RandomAgent
 ```
 
 To specify the agent's race, the opponent's difficulty, and more, you can pass
@@ -139,7 +139,7 @@ also be used to play the game. The UI is fairly simple and incomplete, but it's
 enough to understand the basics of the game. Also, it runs on Linux.
 
 ```shell
-$ python -m pysc2_evolved.bin.play --map Simple64
+$ python -m pysc2_evolved.bin.play --map_name Simple64
 ```
 
 In the UI, hit `?` for a list of the hotkeys. The most basic ones are: `F4` to
