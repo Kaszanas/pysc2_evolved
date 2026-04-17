@@ -708,10 +708,10 @@ class AgentInterfaceFormat(object):
 
 
 def parse_agent_interface_format(
-    feature_screen=None,
-    feature_minimap=None,
-    rgb_screen=None,
-    rgb_minimap=None,
+    feature_screen: int | tuple[int, int] | None = None,
+    feature_minimap: int | tuple[int, int] | None = None,
+    rgb_screen: int | tuple[int, int] | None = None,
+    rgb_minimap: int | tuple[int, int] | None = None,
     action_space: str | None = None,
     action_delays: list[int] | None = None,
     **kwargs,
