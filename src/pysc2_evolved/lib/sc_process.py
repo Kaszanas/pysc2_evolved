@@ -65,6 +65,7 @@ class StarcraftProcess(object):
         version: Version,
         full_screen: bool = False,
         extra_args: List[str] = None,
+        extra_ports: List[int] = None,  # noqa: ARG002 — intentionally unused, see docstring
         verbose: bool = False,
         verbose_mp: bool = False,
         host: str | None = None,
@@ -85,6 +86,14 @@ class StarcraftProcess(object):
           version: `run_configs.lib.Version` object.
           full_screen: Whether to launch the game window full_screen on win/mac.
           extra_args: List of additional args for the SC2 process.
+          extra_ports: Accepted but intentionally unused. Callers (sc2_env,
+            lan_sc2_env, etc.) pass multiplayer ports here, but those ports are
+            consumed directly by the caller for the JoinGame protobuf request —
+            StarcraftProcess never needs them. This parameter exists only to
+            prevent extra_ports from leaking into **kwargs and reaching
+            subprocess.Popen, which rejects unknown keyword arguments.
+            TODO: Remove extra_ports from all run_config.start() call sites and
+            delete this parameter once callers are cleaned up.
           verbose: Whether to have the SC2 process do verbose logging.
           host: IP for the game to listen on for its websocket. This is
               usually "127.0.0.1", or "::1", but could be others as well.
